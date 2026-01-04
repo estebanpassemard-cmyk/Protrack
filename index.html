@@ -3,31 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrack V34 - FINAL</title>
+    <title>ProTrack V35 - ULTIME</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
         body { background-color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif; color: #f8fafc; margin: 0; height: 100vh; overflow: hidden; }
-        .page { display: none; height: calc(100vh - 80px); overflow-y: auto; padding: 20px; -webkit-overflow-scrolling: touch; }
+        .page { display: none; height: calc(100vh - 80px); overflow-y: auto; padding: 20px; }
         .page.active { display: block; }
-        .glass-card { background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; }
+        .glass-card { background: rgba(30, 41, 59, 0.9); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; }
         .input-field { background: #0f172a; border: 1px solid #334155; color: white; border-radius: 10px; padding: 12px; font-size: 16px !important; width: 100%; }
-        .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 80px; background: #1e293b; border-top: 2px solid #334155; display: flex; justify-content: space-around; align-items: center; z-index: 9999; }
-        .nav-item { font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; padding: 10px; }
-        .nav-item.active { color: #3b82f6; border-bottom: 2px solid #3b82f6; }
-        .btn-blue { background: #2563eb; color: white; font-weight: 800; border-radius: 10px; padding: 15px; width: 100%; border: none; }
-        .btn-blue:active { background: #1d4ed8; }
-        .facture-true { border-left: 5px solid #ef4444 !important; }
-        .del-icon { font-size: 14px; padding: 4px; opacity: 0.6; }
+        .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 80px; background: #1e293b; border-top: 2px solid #334155; display: flex; justify-content: space-around; align-items: center; z-index: 999; }
+        .nav-item { font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; text-align: center; width: 33%; height: 100%; display: flex; align-items: center; justify-content: center; }
+        .nav-item.active { color: #3b82f6; background: rgba(59, 130, 246, 0.1); }
+        .btn-blue { background: #2563eb; color: white; font-weight: 800; border-radius: 10px; padding: 16px; width: 100%; border: none; cursor: pointer; }
+        .facture-true { border-left: 6px solid #ef4444 !important; }
     </style>
 </head>
 <body>
 
     <div id="p0" class="page active">
         <div class="flex justify-between items-center mb-6">
-            <button onclick="ui.openSettings()" style="font-size: 24px;">⚙️</button>
-            <div class="font-black text-slate-500 uppercase italic text-[10px]">ProTrack Final</div>
+            <button onclick="openSettings()" style="background:none; border:none; font-size: 28px; padding: 10px;">⚙️</button>
+            <div class="font-black text-slate-500 uppercase italic text-[10px]">Saisie Activité</div>
         </div>
         <div class="glass-card p-4 mb-6">
             <div class="space-y-4">
@@ -45,15 +43,15 @@
                 </select>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="text-[9px] font-bold text-slate-500 uppercase italic">Matin</label>
-                        <div class="flex gap-1 mt-1"><input type="time" id="s1" class="input-field px-1"><input type="time" id="e1" class="input-field px-1"></div>
+                        <label class="text-[9px] font-bold text-slate-500 uppercase">Matin</label>
+                        <div class="flex gap-1"><input type="time" id="s1" class="input-field px-1"><input type="time" id="e1" class="input-field px-1"></div>
                     </div>
                     <div>
-                        <label class="text-[9px] font-bold text-slate-500 uppercase italic">Aprem</label>
-                        <div class="flex gap-1 mt-1"><input type="time" id="s2" class="input-field px-1"><input type="time" id="e2" class="input-field px-1"></div>
+                        <label class="text-[9px] font-bold text-slate-500 uppercase">Aprem</label>
+                        <div class="flex gap-1"><input type="time" id="s2" class="input-field px-1"><input type="time" id="e2" class="input-field px-1"></div>
                     </div>
                 </div>
-                <button onclick="core.save()" id="saveBtn" class="btn-blue">ENREGISTRER</button>
+                <button onclick="saveEntry()" id="saveBtn" class="btn-blue">ENREGISTRER</button>
             </div>
         </div>
         <div id="recent" class="space-y-2"></div>
@@ -65,65 +63,162 @@
             <div class="glass-card p-3"><small class="text-[8px] uppercase font-bold text-red-400">Facturé</small><p id="t-f" class="font-black text-lg">0€</p></div>
         </div>
         <div id="list-bilan" class="space-y-4"></div>
-        <button onclick="core.copy('bilan')" class="btn-blue mt-4" style="background:#475569">COPIER RÉCAP BILAN</button>
+        <button onclick="copyRecap('bilan')" class="btn-blue mt-4" style="background:#475569">COPIER RÉCAP BILAN</button>
     </div>
 
     <div id="p2" class="page">
-        <h2 class="text-center font-black text-slate-500 mb-6 uppercase text-xs tracking-widest">Archives</h2>
+        <h2 class="text-center font-black text-slate-500 mb-6 uppercase text-xs">Projets Archivés</h2>
         <div id="list-archive" class="space-y-4"></div>
-        <button onclick="core.copy('archive')" class="btn-blue mt-4" style="background:#475569">COPIER RÉCAP ARCHIVES</button>
+        <button onclick="copyRecap('archive')" class="btn-blue mt-4" style="background:#475569">COPIER RÉCAP ARCHIVES</button>
     </div>
 
     <nav class="nav-bar">
-        <div onclick="ui.goto(0)" id="n0" class="nav-item active">Saisie</div>
-        <div onclick="ui.goto(1)" id="n1" class="nav-item">Bilan</div>
-        <div onclick="ui.goto(2)" id="n2" class="nav-item">Archives</div>
+        <div onclick="switchPage(0)" id="n0" class="nav-item active">Saisie</div>
+        <div onclick="switchPage(1)" id="n1" class="nav-item">Bilan</div>
+        <div onclick="switchPage(2)" id="n2" class="nav-item">Archives</div>
     </nav>
 
-    <div id="modal" class="hidden fixed inset-0 bg-black/90 z-[10000] p-6 flex items-center justify-center">
-        <div class="glass-card p-6 w-full max-w-sm">
-            <h3 class="text-center font-bold mb-4 uppercase text-blue-400">Réglages Tarifs</h3>
-            <div id="price-fields" class="space-y-3"></div>
-            <button onclick="ui.closeSettings()" class="btn-blue mt-6">VALIDER</button>
+    <div id="modal" style="display:none;" class="fixed inset-0 bg-black/95 z-[9999] p-6 flex items-center justify-center">
+        <div class="glass-card p-6 w-full max-w-sm text-center">
+            <h3 class="font-bold mb-6 uppercase text-blue-400">Tarifs</h3>
+            <div id="price-fields" class="space-y-4 text-left"></div>
+            <button onclick="closeSettings()" class="btn-blue mt-8">VALIDER</button>
         </div>
     </div>
 
     <script>
-        const core = {
-            db: JSON.parse(localStorage.getItem('PT_V34_DB') || '[]'),
-            billed: JSON.parse(localStorage.getItem('PT_V34_B') || '[]'),
-            archived: JSON.parse(localStorage.getItem('PT_V34_A') || '[]'),
-            prices: JSON.parse(localStorage.getItem('PT_V34_P')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 },
+        // Initialisation des données
+        let db = JSON.parse(localStorage.getItem('PT35_DB') || '[]');
+        let billed = JSON.parse(localStorage.getItem('PT35_B') || '[]');
+        let archived = JSON.parse(localStorage.getItem('PT35_A') || '[]');
+        let prices = JSON.parse(localStorage.getItem('PT35_P')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
 
-            save() {
-                const date = document.getElementById('date').value;
-                const project = document.getElementById('project').value.toUpperCase() || "DIVERS";
-                const type = document.getElementById('type').value;
-                if(!date) return;
+        function saveEntry() {
+            const date = document.getElementById('date').value;
+            const project = document.getElementById('project').value.toUpperCase() || "DIVERS";
+            const type = document.getElementById('type').value;
+            if(!date) return;
 
-                let val = 0, hStr = "", info = "";
-                const tM = (id) => { const v = document.getElementById(id).value; if(!v) return 0; const [h,m] = v.split(':'); return parseInt(h)*60 + parseInt(m); };
+            const tM = (id) => { const v = document.getElementById(id).value; if(!v) return 0; const [h,m] = v.split(':'); return parseInt(h)*60 + parseInt(m); };
+            let val = 0, hStr = "", info = "";
 
-                if(type.includes('Pose') || type === 'Jours OFF') {
-                    val = type === 'Pose Piges' ? this.prices.piges : (type === 'Pose Omnes' ? this.prices.omnes : this.prices.off);
-                    hStr = "FORFAIT"; info = "Forfait";
-                } else {
-                    const s1 = document.getElementById('s1').value, e1 = document.getElementById('e1').value;
-                    const s2 = document.getElementById('s2').value, e2 = document.getElementById('e2').value;
-                    let total = (tM('e1')-tM('s1')) + (tM('e2')-tM('s2'));
-                    if(total <= 0) return;
-                    val = (total/60) * (type === 'Production' ? this.prices.prod : this.prices.trajet);
-                    info = Math.floor(total/60) + "h" + (total%60).toString().padStart(2,'0');
-                    hStr = (s1 ? s1+'-'+e1 : "") + (s2 ? " / "+s2+'-'+e2 : "");
+            if(type.includes('Pose') || type === 'Jours OFF') {
+                val = type === 'Pose Piges' ? prices.piges : (type === 'Pose Omnes' ? prices.omnes : prices.off);
+                hStr = "FORFAIT"; info = "Forfait";
+            } else {
+                const s1 = document.getElementById('s1').value, e1 = document.getElementById('e1').value;
+                const s2 = document.getElementById('s2').value, e2 = document.getElementById('e2').value;
+                let total = (tM('e1')-tM('s1')) + (tM('e2')-tM('s2'));
+                if(total <= 0) return;
+                val = (total/60) * (type === 'Production' ? prices.prod : prices.trajet);
+                info = Math.floor(total/60) + "h" + (total%60).toString().padStart(2,'0');
+                hStr = (s1 ? s1+'-'+e1 : "") + (s2 ? " / "+s2+'-'+e2 : "");
+            }
+
+            db.unshift({ id: Date.now(), date, project, type, val, info, hStr });
+            saveToDisk();
+            
+            document.getElementById('saveBtn').innerText = "✓ ENREGISTRÉ";
+            setTimeout(() => { document.getElementById('saveBtn').innerText = "ENREGISTRER"; }, 1000);
+            
+            ['project','s1','e1','s2','e2'].forEach(i => document.getElementById(i).value = "");
+            renderAll();
+        }
+
+        function deleteEntry(id) {
+            if(confirm("Supprimer cette ligne ?")) {
+                db = db.filter(x => x.id !== id);
+                saveToDisk();
+                renderAll();
+            }
+        }
+
+        function toggleStatus(type, p) {
+            if(type === 'b') { billed.includes(p) ? billed = billed.filter(x => x!==p) : billed.push(p); }
+            if(type === 'a') { archived.includes(p) ? archived = archived.filter(x => x!==p) : archived.push(p); }
+            saveToDisk();
+            renderAll();
+        }
+
+        function saveToDisk() {
+            localStorage.setItem('PT35_DB', JSON.stringify(db));
+            localStorage.setItem('PT35_B', JSON.stringify(billed));
+            localStorage.setItem('PT35_A', JSON.stringify(archived));
+            localStorage.setItem('PT35_P', JSON.stringify(prices));
+        }
+
+        function switchPage(idx) {
+            document.querySelectorAll('.page').forEach((p, i) => p.style.display = (i === idx) ? 'block' : 'none');
+            document.querySelectorAll('.nav-item').forEach((n, i) => n.classList.toggle('active', i === idx));
+            renderAll();
+        }
+
+        function openSettings() {
+            const box = document.getElementById('price-fields');
+            const labels = { prod:'Production (€/h)', trajet:'Trajet (€/h)', piges:'Piges (€)', omnes:'Omnes (€)', off:'Jour OFF (€)' };
+            box.innerHTML = Object.keys(prices).map(k => `
+                <div class="flex justify-between items-center"><label class="text-[10px] uppercase font-bold text-slate-400">${labels[k]}</label>
+                <input type="number" id="pr-${k}" value="${prices[k]}" class="input-field w-24 text-right"></div>
+            `).join('');
+            document.getElementById('modal').style.display = 'flex';
+        }
+
+        function closeSettings() {
+            Object.keys(prices).forEach(k => prices[k] = parseFloat(document.getElementById(`pr-${k}`).value));
+            saveToDisk();
+            document.getElementById('modal').style.display = 'none';
+            renderAll();
+        }
+
+        function copyRecap(mode) {
+            let t = "RECAP " + mode.toUpperCase() + "\n\n";
+            db.forEach(l => {
+                const isA = archived.includes(l.project);
+                if((mode === 'archive' && isA) || (mode === 'bilan' && !isA)) {
+                    t += `${l.date.split('-').reverse().join('/')} | ${l.project} | ${l.hStr} | ${l.val.toFixed(2)}€\n`;
                 }
+            });
+            navigator.clipboard.writeText(t).then(() => alert("Copié !"));
+        }
 
-                this.db.unshift({ id: Date.now(), date, project, type, val, info, hStr });
-                this.sync();
-                document.getElementById('saveBtn').innerText = "✓ ENREGISTRÉ";
-                setTimeout(() => { document.getElementById('saveBtn').innerText = "ENREGISTRER"; }, 1000);
-                ['project','s1','e1','s2','e2'].forEach(i => document.getElementById(i).value = "");
-                this.render();
-            },
+        function renderAll() {
+            // Liste projets
+            document.getElementById('p-list').innerHTML = [...new Set(db.map(x => x.project))].map(x => `<option value="${x}">`).join('');
+            
+            // Récents
+            document.getElementById('recent').innerHTML = db.slice(0, 3).map(l => `
+                <div class="glass-card p-3 flex justify-between items-center text-[10px] border-l-4 border-blue-500">
+                    <div><b>${l.project}</b><br><span class="opacity-50">${l.hStr}</span></div>
+                    <div class="font-black text-blue-400">${l.val.toFixed(2)}€</div>
+                </div>`).join('');
 
-            del(id) {
-                if(confirm("Supp
+            // Bilan & Archives
+            let groups = db.reduce((acc, l) => { (acc[l.project] = acc[l.project] || []).push(l); return acc; }, {});
+            let hB = "", hA = "", tAF = 0, tF = 0;
+
+            for (let p in groups) {
+                let isB = billed.includes(p), isA = archived.includes(p), sum = groups[p].reduce((s,l) => s + l.val, 0);
+                if(!isA) { if(isB) tF += sum; else tAF += sum; }
+
+                let rows = groups[p].map(l => `
+                    <div class="flex justify-between items-center py-2 border-b border-white/5 text-[9px]">
+                        <span class="opacity-50">${l.date.split('-').reverse().join('/')}</span>
+                        <span class="flex-1 text-center font-bold text-blue-300">${l.hStr}</span>
+                        <div class="flex items-center gap-2">
+                            <b>${l.val.toFixed(2)}€</b>
+                            <button onclick="deleteEntry(${l.id})" style="padding:4px">🗑️</button>
+                        </div>
+                    </div>`).join('');
+                
+                let card = `<div class="glass-card p-4 mb-4 ${!isA && isB ? 'facture-true' : ''}">
+                    <div class="flex justify-between font-bold mb-2"><span>${p}</span><span class="${isA ? '' : 'text-blue-400'}">${sum.toFixed(2)}€</span></div>
+                    <div class="mb-3">${rows}</div>
+                    <div class="flex gap-2">
+                        ${isA ? `<button onclick="toggleStatus('a','${p.replace(/'/g,"\\'")}')" class="btn-blue py-2 text-[10px] bg-slate-800">RETOUR BILAN</button>` : 
+                        `<button onclick="toggleStatus('b','${p.replace(/'/g,"\\'")}')" class="btn-blue py-2 text-[10px] ${isB ? 'bg-slate-700' : 'bg-slate-800'}">${isB ? 'À FACTURER' : 'FACTURÉ'}</button>
+                         <button onclick="toggleStatus('a','${p.replace(/'/g,"\\'")}')" class="btn-blue py-2 text-[10px] bg-blue-600/20 text-blue-400">ARCHIVER</button>`}
+                    </div></div>`;
+                if(isA) hA += card; else hB += card;
+            }
+            document.getElementById('list-bilan').innerHTML = hB || "<p class='text-center opacity-20 py-10'>Bilan vide</p>";
+            document.getElementById
