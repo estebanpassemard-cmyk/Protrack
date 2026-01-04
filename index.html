@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrack V71 - HORAIRES FIXÉS</title>
+    <title>ProTrack V72</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { background: #0f172a; color: white; font-family: sans-serif; margin: 0; padding-bottom: 90px; }
+        body { background: #0f172a; color: white; font-family: sans-serif; margin: 0; padding-bottom: 90px; touch-action: manipulation; }
         .nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: #1e293b; display: flex; border-top: 1px solid #475569; z-index: 9999; }
         .nav-item { flex: 1; color: #64748b; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px; cursor: pointer; }
         .nav-item.active { color: #3b82f6; border-top: 3px solid #3b82f6; background: rgba(59, 130, 246, 0.1); }
@@ -14,9 +14,9 @@
         #pg0 { display: block; } 
         .card { background: #1e293b; border-radius: 10px; padding: 15px; margin-bottom: 15px; border: 1px solid #334155; }
         .input { background: #0f172a; border: 1px solid #475569; color: white; border-radius: 6px; padding: 12px; width: 100%; font-size: 16px; margin-bottom: 10px; display: block; }
-        .btn { background: #2563eb; color: white; padding: 15px; border-radius: 10px; font-weight: bold; width: 100%; border: none; font-size: 16px; cursor: pointer; }
-        .btn-save { background: #10b981; color: white; padding: 12px; border-radius: 8px; font-weight: bold; width: 100%; border: none; margin-bottom: 15px; cursor: pointer; }
-        .btn-sec { background: #334155; padding: 10px; font-size: 11px; color: white; border-radius: 5px; text-align: center; font-weight: bold; cursor: pointer; }
+        .btn { background: #2563eb; color: white; padding: 15px; border-radius: 10px; font-weight: bold; width: 100%; border: none; font-size: 16px; }
+        .btn-save { background: #10b981; color: white; padding: 12px; border-radius: 8px; font-weight: bold; width: 100%; border: none; margin-bottom: 15px; }
+        .btn-sec { background: #334155; padding: 10px; font-size: 11px; color: white; border-radius: 5px; text-align: center; font-weight: bold; }
         .label { font-size: 11px; color: #94a3b8; margin-bottom: 5px; display: block; text-transform: uppercase; }
         .row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #334155; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -65,7 +65,103 @@
     <div id="set-modal" class="modal"><div class="card" style="width:100%;"><h3>Tarifs</h3><div id="price-inputs"></div><button class="btn" onclick="closeSet()">Fermer</button></div></div>
 
     <script>
+        // Initialisation sécurisée
         let db = JSON.parse(localStorage.getItem('PT61_DATA') || '[]');
         let billed = JSON.parse(localStorage.getItem('PT61_BILL') || '[]');
         let archived = JSON.parse(localStorage.getItem('PT61_ARCH') || '[]');
-        let rates = JSON.parse(localStorage.getItem('PT61_RATE')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off:
+        let rates = JSON.parse(localStorage.getItem('PT61_RATE')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
+
+        function formatDate(dStr) {
+            if(!dStr) return "";
+            const p = dStr.split('-');
+            return p.length === 3 ? p[2]+"/"+p[1]+"/"+p[0] : dStr;
+        }
+
+        function navigate(n) {
+            const pages = ['pg0','pg1','pg2'];
+            const navs = ['nv0','nv1','nv2'];
+            for(let i=0; i<3; i++) {
+                document.getElementById(pages[i]).style.display = (i===n) ? 'block' : 'none';
+                document.getElementById(navs[i]).className = (i===n) ? 'nav-item active' : 'nav-item';
+            }
+            render();
+        }
+
+        function saveData() {
+            const d = document.getElementById('in-date').value;
+            const p = document.getElementById('in-proj').value.toUpperCase() || "DIVERS";
+            const t = document.getElementById('in-type').value;
+            if(!d) return;
+
+            const toM = (v) => { if(!v) return 0; const s = v.split(':'); return parseInt(s[0])*60 + parseInt(s[1]); };
+            const s1=toM(document.getElementById('s1').value), e1=toM(document.getElementById('e1').value);
+            const s2=toM(document.getElementById('s2').value), e2=toM(document.getElementById('e2').value);
+            
+            let val=0, hStr="", dur=0;
+            if(t.includes('Pose') || t === 'Jours OFF') {
+                val = t === 'Pose Piges' ? rates.piges : (t === 'Pose Omnes' ? rates.omnes : rates.off);
+                hStr = "FORFAIT";
+            } else {
+                let m1 = (e1 > s1) ? (e1 - s1) : 0;
+                let m2 = (e2 > s2) ? (e2 - s2) : 0;
+                dur = (m1 + m2) / 60;
+                let p1 = m1 > 0 ? document.getElementById('s1').value+"-"+document.getElementById('e1').value : "";
+                let p2 = m2 > 0 ? document.getElementById('s2').value+"-"+document.getElementById('e2').value : "";
+                hStr = (p1 && p2) ? p1+" / "+p2 : (p1 || p2 || "00:00");
+                val = dur * (t === 'Production' ? rates.prod : rates.trajet);
+            }
+
+            db.unshift({id: Date.now(), d, p, t, val, hStr, dur});
+            localStorage.setItem('PT61_DATA', JSON.stringify(db));
+            ['in-proj','s1','e1','s2','e2'].forEach(id => document.getElementById(id).value = "");
+            render();
+        }
+
+        function copyData() {
+            let grp = db.reduce((a, o) => { (a[o.p] = a[o.p] || []).push(o); return a; }, {});
+            let txt = "EXPORT PROTRACK - " + new Date().toLocaleDateString() + "\n==============================\n\n";
+            for (let pr in grp) {
+                txt += "PROJET : " + pr + "\n";
+                let s = 0;
+                grp[pr].forEach(o => {
+                    let d = formatDate(o.d);
+                    txt += (o.hStr === "FORFAIT") ? "  ["+d+"] "+o.t+" : "+o.val.toFixed(2)+"€\n" : "  ["+d+"] "+o.hStr+" ("+o.dur.toFixed(2)+"h) : "+o.val.toFixed(2)+"€\n";
+                    s += o.val;
+                });
+                txt += "TOTAL " + pr + " : " + s.toFixed(2) + "€\n------------------------------\n\n";
+            }
+            const el = document.createElement('textarea'); el.value = txt; document.body.appendChild(el); el.select();
+            document.execCommand('copy'); document.body.removeChild(el);
+        }
+
+        function render() {
+            document.getElementById('plist').innerHTML = [...new Set(db.map(x => x.p))].map(p => `<option value="${p}">`).join('');
+            document.getElementById('recent-list').innerHTML = db.slice(0, 10).map(o => `
+                <div class="card" style="border-left:4px solid #3b82f6; padding:12px;">
+                    <div style="display:flex; justify-content:space-between;"><b>${o.p}</b><div><b>${o.val.toFixed(2)}€</b> <span onclick="delItem(${o.id})" style="margin-left:10px;">🗑️</span></div></div>
+                    <div style="font-size:11px; color:#94a3b8; margin-top:5px;">${formatDate(o.d)} - ${o.hStr}</div>
+                </div>`).join('');
+            
+            let hB="", hA="", tAF=0, tF=0, grps = db.reduce((a,o)=>{(a[o.p]=a[o.p]||[]).push(o);return a;},{});
+            for(let pr in grps) {
+                let isB=billed.includes(pr), isA=archived.includes(pr), tot=grps[pr].reduce((s,o)=>s+o.val,0);
+                if(!isA) isB ? tF+=tot : tAF+=tot;
+                let c=isB?'#10b981':'#3b82f6';
+                let rows = grps[pr].map(o => `<div class="row"><span style="font-size:10px; width:70px;">${formatDate(o.d)}</span><div style="flex:1; text-align:center; font-size:10px;">${o.hStr} ${o.dur > 0 ? `<span class="blue-hours">(${o.dur.toFixed(2)}h)</span>` : ''}</div><div style="width:70px; text-align:right; font-weight:bold; font-size:11px;">${o.val.toFixed(2)}€</div></div>`).join('');
+                let card = `<div class="card" style="border-left:5px solid ${c}"><div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:8px;"><span>${pr}</span><span style="color:${c};">${tot.toFixed(2)}€</span></div>${rows}<div class="grid" style="margin-top:12px;">${isA ? `<div class="btn-sec" onclick="toggleArch('${pr}')">Réactiver</div>` : `<div class="btn-sec" onclick="toggleBill('${pr}')" style="background:${isB?'#064e3b':'#334155'}">${isB?'À FACTURER':'FACTURÉ'}</div><div class="btn-sec" onclick="toggleArch('${pr}')" style="color:#60a5fa">ARCHIVER</div>`}</div></div>`;
+                isA ? hA+=card : hB+=card;
+            }
+            document.getElementById('list-bilan').innerHTML = hB || "Vide";
+            document.getElementById('list-archive').innerHTML = hA || "Vide";
+            document.getElementById('sum-af').innerText = tAF.toFixed(2) + "€";
+            document.getElementById('sum-f').innerText = tF.toFixed(2) + "€";
+        }
+
+        function delItem(id) { if(confirm("Supprimer ?")) { db=db.filter(x=>x.id!==id); localStorage.setItem('PT61_DATA',JSON.stringify(db)); render(); } }
+        function toggleBill(p) { billed.includes(p)?billed=billed.filter(x=>x!==p):billed.push(p); localStorage.setItem('PT61_BILL',JSON.stringify(billed)); render(); }
+        function toggleArch(p) { archived.includes(p)?archived=archived.filter(x=>x!==p):archived.push(p); localStorage.setItem('PT61_ARCH',JSON.stringify(archived)); render(); }
+        function openSet() { document.getElementById('price-inputs').innerHTML = Object.keys(rates).map(k => `<label class="label">${k}</label><input type="number" id="rt-${k}" value="${rates[k]}" class="input">`).join(''); document.getElementById('set-modal').style.display = 'flex'; }
+        function closeSet() { Object.keys(rates).forEach(k => rates[k] = parseFloat(document.getElementById(`rt-${k}`).value)); localStorage.setItem('PT61_RATE', JSON.stringify(rates)); document.getElementById('set-modal').style.display = 'none'; render(); }
+        
+        // Démarrage
+        document.getElementById('in-date').valueAsDate = new Date();
