@@ -3,61 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrack Snap & Archive</title>
+    <title>ProTrack Fixed</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif; color: #f8fafc; overflow: hidden; height: 100vh; }
+        * { box-sizing: border-box; }
+        body { background-color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif; color: #f8fafc; margin: 0; padding: 0; overflow: hidden; }
         
-        /* Navigation Snap (Force l'alignement sur la page) */
-        .app-wrapper { 
-            display: flex; 
-            width: 300%; 
-            height: 100vh; 
-            overflow-x: auto; 
-            scroll-snap-type: x mandatory; 
+        /* Conteneur principal avec SNAP */
+        .app-viewport {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
             scroll-behavior: smooth;
-            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
         }
-        .app-wrapper::-webkit-scrollbar { display: none; }
+        .app-viewport::-webkit-scrollbar { display: none; }
         
-        .page { 
-            width: 33.333vw; 
-            height: 100vh; 
-            scroll-snap-align: start; 
-            overflow-y: auto; 
-            padding-bottom: 100px; 
+        /* Chaque page fait exactement la largeur de l'écran */
+        .page {
+            flex: 0 0 100vw; /* Force la largeur à 100% de l'écran */
+            width: 100vw;
+            height: 100vh;
+            scroll-snap-align: start;
+            overflow-y: auto;
+            padding: 20px 20px 100px 20px;
         }
 
         .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; }
-        .input-field { background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 12px; padding: 12px; font-size: 16px !important; }
+        .input-field { background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 12px; padding: 12px; font-size: 16px !important; width: 100%; }
         .btn-primary { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
         .facture-true { border-left: 5px solid #ef4444 !important; opacity: 0.6; }
 
-        /* Nav Fixe */
-        .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 75px; background: rgba(15, 23, 42, 0.95); border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-around; align-items: center; z-index: 100; }
-        .nav-item { font-size: 9px; font-weight: 800; color: #64748b; text-align: center; }
+        /* Navigation Basse */
+        .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 75px; background: #0f172a; border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-around; align-items: center; z-index: 100; }
+        .nav-item { font-size: 10px; font-weight: 800; color: #475569; text-transform: uppercase; }
         .nav-item.active { color: #3b82f6; }
     </style>
 </head>
 <body>
 
-    <div class="app-wrapper" id="snapContainer">
+    <div class="app-viewport" id="viewport">
         
-        <div class="page p-4" id="page0">
+        <div class="page" id="p0">
             <div class="flex justify-between items-center mb-6">
                 <button onclick="toggleSettings(true)" class="w-10 h-10 glass-card flex items-center justify-center text-xs opacity-50">⚙️</button>
-                <div class="text-[9px] font-black uppercase text-slate-500 tracking-[0.2em] italic">Saisie</div>
+                <div class="text-[9px] font-black uppercase text-slate-500 italic">Saisie Rapide</div>
             </div>
 
             <div class="glass-card p-5 mb-8">
                 <div class="space-y-4">
                     <div class="grid grid-cols-2 gap-2">
-                        <input type="date" id="date" class="input-field w-full">
-                        <input type="text" id="project" list="project-list" class="input-field w-full" placeholder="Projet">
+                        <input type="date" id="date" class="input-field">
+                        <input type="text" id="project" list="project-list" class="input-field" placeholder="Projet">
                     </div>
                     <datalist id="project-list"></datalist>
-                    <select id="type" onchange="toggleInputs()" class="input-field w-full font-bold text-blue-400">
+                    <select id="type" onchange="toggleInputs()" class="input-field font-bold text-blue-400">
                         <option value="Production">Production</option>
                         <option value="Trajet">Trajet</option>
                         <option value="Pose Piges">Pose Piges</option>
@@ -67,79 +70,75 @@
                     <div id="section-hours" class="space-y-4 pt-2">
                         <div class="grid grid-cols-2 gap-2 text-[9px] font-bold text-slate-500 italic">
                             <span>Début Matin</span><span>Fin Matin</span>
-                            <input type="time" id="start1" class="input-field w-full">
-                            <input type="time" id="end1" class="input-field w-full">
+                            <input type="time" id="start1" class="input-field">
+                            <input type="time" id="end1" class="input-field">
                         </div>
                         <div class="grid grid-cols-2 gap-2 text-[9px] font-bold text-slate-500 italic">
-                            <span>Début Reprise</span><span>Fin Départ</span>
-                            <input type="time" id="start2" class="input-field w-full">
-                            <input type="time" id="end2" class="input-field w-full">
+                            <span>Reprise</span><span>Fin Départ</span>
+                            <input type="time" id="start2" class="input-field">
+                            <input type="time" id="end2" class="input-field">
                         </div>
                     </div>
-                    <button onclick="addEntry()" class="w-full btn-primary py-4 rounded-xl font-black text-xs uppercase tracking-widest text-white shadow-xl">Enregistrer</button>
+                    <button onclick="addEntry()" class="w-full btn-primary py-4 rounded-xl font-black text-xs uppercase tracking-widest text-white mt-2">Enregistrer</button>
                 </div>
             </div>
-            <h3 class="text-[9px] font-black text-slate-600 uppercase mb-4 ml-1 italic">Dernières Activités</h3>
+            <h3 class="text-[9px] font-black text-slate-600 uppercase mb-4 italic">Dernières entrées</h3>
             <div id="recent-logs" class="space-y-3"></div>
         </div>
 
-        <div class="page p-4" id="page1">
-            <h2 class="font-black text-xs uppercase italic tracking-widest text-center mt-2 mb-6">Bilan Global</h2>
+        <div class="page" id="p1">
+            <h2 class="font-black text-xs uppercase italic tracking-widest text-center mb-6">Bilan En Cours</h2>
             <div class="grid grid-cols-2 gap-3 mb-6">
                 <div class="bg-blue-600/10 p-4 rounded-xl border border-blue-500/20 text-center">
-                    <p class="text-[8px] font-bold text-blue-400 uppercase mb-1 italic">À Facturer</p>
+                    <p class="text-[8px] font-bold text-blue-400 uppercase mb-1">À Facturer</p>
                     <p id="total-pending" class="text-lg font-black text-blue-400">0.00 €</p>
                 </div>
                 <div class="bg-red-600/10 p-4 rounded-xl border border-red-500/20 text-center">
-                    <p class="text-[8px] font-bold text-red-400 uppercase mb-1 italic">Facturé</p>
+                    <p class="text-[8px] font-bold text-red-400 uppercase mb-1">Facturé</p>
                     <p id="total-billed" class="text-lg font-black text-red-400">0.00 €</p>
                 </div>
             </div>
             <div id="table-active" class="space-y-4"></div>
-            
-            <div class="mt-8">
-                <button onclick="copyToClipboard('active')" class="w-full bg-white/5 text-white py-4 rounded-xl text-[9px] font-bold uppercase tracking-widest">Copier Bilan (Notes)</button>
-            </div>
+            <button onclick="copyToClipboard('active')" class="w-full bg-white/5 text-white py-4 rounded-xl text-[9px] font-bold uppercase mt-8">Copier Bilan (Notes)</button>
         </div>
 
-        <div class="page p-4" id="page2">
-            <h2 class="font-black text-xs uppercase italic tracking-widest text-center mt-2 mb-6 text-slate-500">Archives</h2>
+        <div class="page" id="p2">
+            <h2 class="font-black text-xs uppercase italic tracking-widest text-center mb-6 text-slate-500">Projets Archivés</h2>
             <div id="table-archive" class="space-y-4"></div>
             <div class="mt-8 flex gap-2">
-                <button onclick="copyToClipboard('archive')" class="flex-grow bg-white/5 text-white py-4 rounded-xl text-[9px] font-bold uppercase tracking-widest">Copier Archives</button>
-                <button onclick="exportCSV()" class="bg-emerald-800 text-white px-6 rounded-xl text-[9px] font-bold uppercase tracking-widest">Excel</button>
+                <button onclick="copyToClipboard('archive')" class="flex-grow bg-white/5 text-white py-4 rounded-xl text-[9px] font-bold uppercase">Copier Archives</button>
+                <button onclick="exportCSV()" class="bg-emerald-800 text-white px-6 rounded-xl text-[9px] font-bold uppercase">Excel</button>
             </div>
         </div>
 
     </div>
 
     <nav class="nav-bar">
-        <div onclick="scrollPage(0)" class="nav-item" id="nav0">SAISIE</div>
-        <div onclick="scrollPage(1)" class="nav-item" id="nav1">BILAN</div>
-        <div onclick="scrollPage(2)" class="nav-item" id="nav2">ARCHIVES</div>
+        <div onclick="jump(0)" class="nav-item active" id="nav0">Saisie</div>
+        <div onclick="jump(1)" class="nav-item" id="nav1">Bilan</div>
+        <div onclick="jump(2)" class="nav-item" id="nav2">Archives</div>
     </nav>
 
     <div id="settings-modal" class="hidden fixed inset-0 bg-black/95 flex items-center justify-center p-6 z-[200]">
         <div class="glass-card w-full p-6 max-w-sm">
-            <h2 class="text-center font-bold mb-8 uppercase text-xs italic">Tarification</h2>
+            <h2 class="text-center font-bold mb-8 uppercase text-xs italic tracking-widest">Tarification</h2>
             <div class="space-y-5" id="settings-list"></div>
-            <button onclick="saveSettings()" class="w-full btn-primary text-white py-4 rounded-xl font-bold mt-8">VALIDER</button>
-            <button onclick="toggleSettings(false)" class="w-full text-slate-600 text-[10px] mt-4 text-center font-bold">FERMER</button>
+            <button onclick="saveSettings()" class="w-full btn-primary text-white py-4 rounded-xl font-bold mt-8 uppercase">Valider</button>
+            <button onclick="toggleSettings(false)" class="w-full text-slate-600 text-[10px] mt-4 text-center font-bold uppercase">Fermer</button>
         </div>
     </div>
 
     <script>
-        let settings = JSON.parse(localStorage.getItem('pro_settings_v22')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
+        let settings = JSON.parse(localStorage.getItem('pro_settings_v23')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
         document.getElementById('date').valueAsDate = new Date();
 
-        function scrollPage(idx) {
-            document.getElementById('snapContainer').scrollTo({ left: idx * window.innerWidth, behavior: 'smooth' });
-        }
-
-        // Listener pour mettre à jour la nav quand on slide à la main
-        document.getElementById('snapContainer').addEventListener('scroll', () => {
-            const idx = Math.round(document.getElementById('snapContainer').scrollLeft / window.innerWidth);
-            document.querySelectorAll('.nav-item').forEach((el, i) => el.classList.toggle('active', i === idx));
+        // Navigation
+        const vp = document.getElementById('viewport');
+        function jump(i) { vp.scrollTo({ left: i * window.innerWidth, behavior: 'smooth' }); }
+        
+        vp.addEventListener('scroll', () => {
+            const i = Math.round(vp.scrollLeft / window.innerWidth);
+            document.querySelectorAll('.nav-item').forEach((el, idx) => el.classList.toggle('active', i === idx));
         });
 
         function toggleInputs() {
@@ -159,101 +158,16 @@
 
         function saveSettings() {
             Object.keys(settings).forEach(k => settings[k] = parseFloat(document.getElementById(`price-${k}`).value));
-            localStorage.setItem('pro_settings_v22', JSON.stringify(settings)); toggleSettings(false); render();
+            localStorage.setItem('pro_settings_v23', JSON.stringify(settings)); toggleSettings(false); render();
         }
 
         function addEntry() {
             const date = document.getElementById('date').value, project = document.getElementById('project').value || "DIVERS", type = document.getElementById('type').value;
             let val = 0, detail = "";
             const m = (ts) => { if(!ts) return null; const [h, mi] = ts.split(':'); return parseInt(h)*60 + parseInt(mi); };
-            
+
             if (type.includes('Pose') || type === 'Jours OFF') {
                 val = settings[type === 'Pose Piges' ? 'piges' : (type === 'Pose Omnes' ? 'omnes' : 'off')]; detail = "FORFAIT";
             } else {
                 const ms1 = m(document.getElementById('start1').value), me1 = m(document.getElementById('end1').value);
-                const ms2 = m(document.getElementById('start2').value), me2 = m(document.getElementById('end2').value);
-                let t = 0;
-                if(ms1 !== null && me2 !== null && me1 === null && ms2 === null) {
-                    t = me2 - ms1; detail = `${document.getElementById('start1').value} > ${document.getElementById('end2').value}`;
-                } else {
-                    t = ((ms1!==null && me1!==null) ? (me1-ms1) : 0) + ((ms2!==null && me2!==null) ? (me2-ms2) : 0);
-                    detail = (document.getElementById('start1').value?document.getElementById('start1').value+'-'+document.getElementById('end1').value:'') + (document.getElementById('start2').value?' / '+document.getElementById('start2').value+'-'+document.getElementById('end2').value:'');
-                }
-                if(t <= 0) return alert("Vérifie les heures");
-                val = (t/60) * (type === 'Production' ? settings.prod : settings.trajet);
-                detail += ` (${Math.floor(t/60)}h${(t%60).toString().padStart(2,'0')})`;
-            }
-
-            let logs = JSON.parse(localStorage.getItem('pro_data_v22') || '[]');
-            logs.unshift({ id: Date.now(), date, project: project.toUpperCase(), type, val, detail });
-            localStorage.setItem('pro_data_v22', JSON.stringify(logs));
-            ['project','start1','end1','start2','end2'].forEach(id => document.getElementById(id).value = "");
-            render();
-        }
-
-        function render() {
-            const logs = JSON.parse(localStorage.getItem('pro_data_v22') || '[]');
-            const billedList = JSON.parse(localStorage.getItem('billed_v22') || '[]'); // Facturés
-            const archivedList = JSON.parse(localStorage.getItem('archived_v22') || '[]'); // Mis de côté
-            document.getElementById('project-list').innerHTML = [...new Set(logs.map(l => l.project))].map(p => `<option value="${p}">`).join('');
-
-            // Accueil (5 dernières)
-            document.getElementById('recent-logs').innerHTML = logs.slice(0, 5).map(l => `
-                <div class="glass-card p-4 flex justify-between items-center border-l-4 ${l.type === 'Production' ? 'border-blue-500' : 'border-indigo-500'}">
-                    <div class="text-[10px]"><p class="text-[7px] text-slate-500 font-bold">${l.date.split('-').reverse().join('/')}</p><h4 class="font-bold text-slate-100">${l.project}</h4><p class="text-[8px] text-blue-400 italic">${l.detail}</p></div>
-                    <p class="font-black text-lg tracking-tighter">${l.val.toFixed(2)}€</p>
-                </div>`).join('');
-
-            const grouped = logs.reduce((acc, log) => { (acc[log.project] = acc[log.project] || []).push(log); return acc; }, {});
-            let hActive = "", hArchive = "", tP = 0, tB = 0;
-
-            for (const proj in grouped) {
-                const isBilled = billedList.includes(proj);
-                const isArchived = archivedList.includes(proj);
-                const pTotal = grouped[proj].reduce((s, l) => s + l.val, 0);
-                
-                if(!isArchived) isBilled ? tB += pTotal : tP += pTotal;
-
-                let rows = grouped[proj].map(l => `
-                    <div class="flex justify-between items-center py-3 border-b border-white/5 last:border-0 text-[10px]">
-                        <div><span class="text-slate-300 font-bold">${l.date.split('-').reverse().join('/')}</span><br><span class="text-[8px] text-blue-400 font-bold uppercase">${l.type}</span></div>
-                        <div class="text-[8px] text-slate-500 italic px-2">${l.detail}</div>
-                        <div class="flex items-center gap-3"><span class="font-bold">${l.val.toFixed(2)}€</span><span onclick="deleteItem(${l.id})" class="text-xs">🗑️</span></div>
-                    </div>`).join('');
-
-                const card = `
-                <div class="glass-card overflow-hidden ${isBilled && !isArchived ? 'facture-true' : ''}">
-                    <div class="p-4 bg-white/5 flex justify-between items-center">
-                        <h3 class="font-bold text-[10px] uppercase">${proj}</h3>
-                        <div class="flex gap-2">
-                            <button onclick="toggleFacture('${proj.replace(/'/g, "\\'")}')" class="text-[8px] font-bold px-3 py-2 rounded bg-slate-700 uppercase">${isBilled ? 'Réouvrir' : 'Facturer'}</button>
-                            <button onclick="toggleArchive('${proj.replace(/'/g, "\\'")}')" class="text-[8px] font-bold px-3 py-2 rounded bg-slate-800 uppercase">${isArchived ? 'Bilan' : 'Archive'}</button>
-                        </div>
-                    </div>
-                    <div class="px-4 pb-2">${rows}</div>
-                </div>`;
-                
-                isArchived ? hArchive += card : hActive += card;
-            }
-            document.getElementById('table-active').innerHTML = hActive || "<p class='text-center py-10 opacity-30 text-xs uppercase font-black'>Bilan Vide</p>";
-            document.getElementById('table-archive').innerHTML = hArchive || "<p class='text-center py-10 opacity-30 text-xs uppercase font-black'>Archives Vides</p>";
-            document.getElementById('total-pending').innerText = tP.toFixed(2) + " €";
-            document.getElementById('total-billed').innerText = tB.toFixed(2) + " €";
-        }
-
-        function toggleFacture(p) { let b = JSON.parse(localStorage.getItem('billed_v22') || '[]'); b.includes(p) ? b = b.filter(x => x !== p) : b.push(p); localStorage.setItem('billed_v22', JSON.stringify(b)); render(); }
-        function toggleArchive(p) { let a = JSON.parse(localStorage.getItem('archived_v22') || '[]'); a.includes(p) ? a = a.filter(x => x !== p) : a.push(p); localStorage.setItem('archived_v22', JSON.stringify(a)); render(); }
-        function deleteItem(id) { if(confirm("Supprimer ?")) { let l = JSON.parse(localStorage.getItem('pro_data_v22') || '[]'); l = l.filter(i => i.id !== id); localStorage.setItem('pro_data_v22', JSON.stringify(l)); render(); } }
-        function copyToClipboard(mode) {
-            const logs = JSON.parse(localStorage.getItem('pro_data_v22') || '[]');
-            const list = (mode === 'archive') ? JSON.parse(localStorage.getItem('archived_v22') || '[]') : [];
-            const activeLogs = (mode === 'archive') ? logs.filter(l => list.includes(l.project)) : logs.filter(l => !JSON.parse(localStorage.getItem('archived_v22') || '[]').includes(l.project));
-            let t = `RECAP ${mode.toUpperCase()}\n\n`;
-            activeLogs.forEach(l => t += `${l.date.split('-').reverse().join('/')} | ${l.project} | ${l.detail} | ${l.val.toFixed(2)}€\n`);
-            navigator.clipboard.writeText(t).then(() => alert("Copié dans le presse-papier !"));
-        }
-        function exportCSV() { const logs = JSON.parse(localStorage.getItem('pro_data_v22') || '[]'); let c = "Date;Projet;Activite;Duree;Montant\n"; logs.forEach(l => c += `${l.date};${l.project};${l.type};${l.detail};${l.val.toFixed(2)}\n`); const ln = document.createElement("a"); ln.href = URL.createObjectURL(new Blob([c], {type:'text/csv'})); ln.download = "ProTrack_Export.csv"; ln.click(); }
-        render(); toggleInputs();
-    </script>
-</body>
-</html>
+                const ms2 = m(document.getElementById('start2').value), me
