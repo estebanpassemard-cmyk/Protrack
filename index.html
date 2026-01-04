@@ -2,90 +2,72 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrack V51</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProTrack V52</title>
     <style>
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
-        
-        /* Correction du Scroll : On laisse le body défiler normalement */
-        html, body { 
-            background: #0f172a; color: white; font-family: -apple-system, sans-serif; 
-            margin: 0; padding: 0; min-height: 100vh; width: 100%;
+        * { box-sizing: border-box; }
+        body { 
+            background: #0f172a; color: white; font-family: sans-serif; 
+            margin: 0; padding-bottom: 90px;
         }
-        
-        /* Conteneur de page avec espace pour la nav */
-        .page { display: none; padding: 20px; padding-bottom: 100px; width: 100%; }
+        .page { display: none; padding: 15px; }
         #pg0 { display: block; } 
-
-        .card { background: #1e293b; border-radius: 12px; padding: 15px; margin-bottom: 15px; border: 1px solid #334155; }
-        .input { background: #0f172a; border: 1px solid #475569; color: white; border-radius: 8px; padding: 12px; width: 100%; font-size: 16px; margin-bottom: 10px; display: block; }
-        
-        .btn { background: #2563eb; color: white; padding: 18px; border-radius: 12px; font-weight: 800; width: 100%; text-align: center; text-transform: uppercase; border: none; }
-        .btn-sec { background: #334155; padding: 10px; font-size: 11px; color: white; border-radius: 6px; text-align: center; font-weight: bold; text-transform: uppercase; }
-
-        /* Navigation Fixe identique à la V45 qui fonctionnait */
-        .nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 80px; background: #1e293b; display: flex; border-top: 1px solid #475569; z-index: 9999; }
-        .nav-item { flex: 1; color: #64748b; display: flex; align-items: center; justify-content: center; font-weight: 800; text-transform: uppercase; font-size: 12px; height: 100%; }
-        .nav-item.active { color: #3b82f6; background: rgba(59, 130, 246, 0.1); border-top: 4px solid #3b82f6; }
-
-        .label { font-size: 10px; color: #94a3b8; text-transform: uppercase; font-weight: 800; margin-bottom: 4px; display: block; }
-        .row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #334155; }
-        
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .hour-badge { font-size: 11px; color: #3b82f6; font-weight: 900; display: block; margin-top: 3px; }
-        
-        .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:10000; padding:20px; align-items:center; justify-content:center; }
+        .card { background: #1e293b; border-radius: 10px; padding: 15px; margin-bottom: 15px; border: 1px solid #334155; }
+        .input { background: #0f172a; border: 1px solid #475569; color: white; border-radius: 6px; padding: 12px; width: 100%; font-size: 16px; margin-bottom: 10px; display: block; }
+        .btn { background: #2563eb; color: white; padding: 15px; border-radius: 10px; font-weight: bold; width: 100%; border: none; font-size: 16px; }
+        .btn-sec { background: #334155; padding: 10px; font-size: 11px; color: white; border-radius: 5px; text-align: center; text-transform: uppercase; font-weight: bold; }
+        .nav { position: fixed; bottom: 0; width: 100%; height: 70px; background: #1e293b; display: flex; border-top: 1px solid #475569; }
+        .nav-item { flex: 1; color: #64748b; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px; }
+        .nav-item.active { color: #3b82f6; border-top: 3px solid #3b82f6; background: rgba(59, 130, 246, 0.1); }
+        .label { font-size: 11px; color: #94a3b8; margin-bottom: 5px; display: block; text-transform: uppercase; }
+        .row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #334155; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .blue-hours { color: #3b82f6; font-weight: bold; font-size: 11px; margin-top: 2px; display: block; }
+        .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:1000; padding:20px; align-items:center; }
     </style>
 </head>
 <body>
 
     <div class="nav">
-        <div id="nv0" class="nav-item active" onclick="goto(event, 0)">Saisie</div>
-        <div id="nv1" class="nav-item" onclick="goto(event, 1)">Bilan</div>
-        <div id="nv2" class="nav-item" onclick="goto(event, 2)">Archives</div>
+        <div id="nv0" class="nav-item active" onclick="goto(0)">Saisie</div>
+        <div id="nv1" class="nav-item" onclick="goto(1)">Bilan</div>
+        <div id="nv2" class="nav-item" onclick="goto(2)">Archives</div>
     </div>
 
     <div id="pg0" class="page">
-        <div onclick="openSet(event)" style="font-size:32px; margin-bottom:20px; width:60px; cursor:pointer;">⚙️</div>
-        
+        <div onclick="openSet()" style="font-size:25px; margin-bottom:15px;">⚙️ Paramètres</div>
         <div class="card">
-            <div class="grid-2">
+            <div class="grid">
                 <input type="date" id="in-date" class="input">
                 <input type="text" id="in-proj" placeholder="PROJET" class="input" list="plist">
             </div>
             <datalist id="plist"></datalist>
-
-            <select id="in-type" class="input" style="color:#60a5fa; font-weight:800;">
+            <select id="in-type" class="input">
                 <option value="Production">Production</option>
                 <option value="Trajet">Trajet</option>
                 <option value="Pose Piges">Pose Piges</option>
                 <option value="Pose Omnes">Pose Omnes</option>
                 <option value="Jours OFF">Jours OFF</option>
             </select>
-
-            <label class="label">Matin (Début / Fin)</label>
-            <div class="grid-2" style="margin-bottom:10px;">
+            <label class="label">Matin</label>
+            <div class="grid">
                 <input type="time" id="s1" class="input">
                 <input type="time" id="e1" class="input">
             </div>
-
-            <label class="label">Aprem (Début / Fin)</label>
-            <div class="grid-2" style="margin-bottom:10px;">
+            <label class="label">Après-midi</label>
+            <div class="grid">
                 <input type="time" id="s2" class="input">
                 <input type="time" id="e2" class="input">
             </div>
-
-            <button class="btn" onclick="saveData(event)">ENREGISTRER</button>
+            <button class="btn" onclick="saveData()">ENREGISTRER</button>
         </div>
-
-        <div style="font-size:11px; color:#64748b; text-transform:uppercase; margin:25px 0 10px 5px; font-weight:800;">Dernières saisies</div>
         <div id="recent-list"></div>
     </div>
 
     <div id="pg1" class="page">
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:20px;">
-            <div class="card" style="text-align:center; margin-bottom:0;"><div class="label" style="color:#60a5fa">À Facturer</div><div id="sum-af" style="font-weight:900; font-size:22px;">0€</div></div>
-            <div class="card" style="text-align:center; margin-bottom:0;"><div class="label" style="color:#f87171">Facturé</div><div id="sum-f" style="font-weight:900; font-size:22px;">0€</div></div>
+        <div class="grid" style="margin-bottom:15px;">
+            <div class="card" style="margin:0; text-align:center;"><div class="label">À Facturer</div><div id="sum-af" style="font-size:20px; font-weight:bold;">0€</div></div>
+            <div class="card" style="margin:0; text-align:center;"><div class="label">Facturé</div><div id="sum-f" style="font-size:20px; font-weight:bold;">0€</div></div>
         </div>
         <div id="list-bilan"></div>
     </div>
@@ -94,84 +76,72 @@
 
     <div id="set-modal" class="modal">
         <div class="card" style="width:100%;">
-            <h3 style="text-align:center; margin-top:0;">Configuration</h3>
+            <h3 style="margin:0 0 15px 0;">Tarifs</h3>
             <div id="price-inputs"></div>
-            <button class="btn" onclick="closeSet(event)" style="margin-top:20px;">VALIDER</button>
+            <button class="btn" onclick="closeSet()">Fermer</button>
         </div>
     </div>
 
     <script>
-        let db = JSON.parse(localStorage.getItem('PT44_DATA') || '[]');
-        let billed = JSON.parse(localStorage.getItem('PT44_BILL') || '[]');
-        let archived = JSON.parse(localStorage.getItem('PT44_ARCH') || '[]');
-        let rates = JSON.parse(localStorage.getItem('PT44_RATE')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
+        let db = JSON.parse(localStorage.getItem('PT52_DATA') || '[]');
+        let billed = JSON.parse(localStorage.getItem('PT52_BILL') || '[]');
+        let archived = JSON.parse(localStorage.getItem('PT52_ARCH') || '[]');
+        let rates = JSON.parse(localStorage.getItem('PT52_RATE')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
 
-        const $ = (id) => document.getElementById(id);
-
-        // NAVIGATION MOTEUR V45 (Rétabli)
-        window.goto = function(e, n) {
-            if(e) e.stopPropagation();
-            window.scrollTo(0,0);
-            for(let i=0; i<3; i++) {
-                $(`pg${i}`).style.setProperty('display', 'none', 'important');
-                $(`nv${i}`).classList.remove('active');
-            }
-            $(`pg${n}`).style.setProperty('display', 'block', 'important');
-            $(`nv${n}`).classList.add('active');
+        function goto(n) {
+            document.getElementById('pg0').style.display = n === 0 ? 'block' : 'none';
+            document.getElementById('pg1').style.display = n === 1 ? 'block' : 'none';
+            document.getElementById('pg2').style.display = n === 2 ? 'block' : 'none';
+            document.getElementById('nv0').classList.toggle('active', n === 0);
+            document.getElementById('nv1').classList.toggle('active', n === 1);
+            document.getElementById('nv2').classList.toggle('active', n === 2);
             render();
-        };
+        }
 
-        window.saveData = function(e) {
-            if(e) e.stopPropagation();
-            const d = $('in-date').value;
-            const p = $('in-proj').value.toUpperCase() || "DIVERS";
-            const t = $('in-type').value;
-            if(!d) return alert("Date manquante");
+        function saveData() {
+            const d = document.getElementById('in-date').value;
+            const p = document.getElementById('in-proj').value.toUpperCase() || "DIVERS";
+            const t = document.getElementById('in-type').value;
+            if(!d) return alert("Date ?");
 
-            const toM = (v) => { if(!v) return null; const [h,m] = v.split(':'); return parseInt(h)*60 + parseInt(m); };
-            const ms = toM($('s1').value), me = toM($('e1').value), as = toM($('s2').value), ae = toM($('e2').value);
+            const toM = (v) => { if(!v) return 0; const [h,m] = v.split(':'); return parseInt(h)*60 + parseInt(m); };
+            const s1 = toM(document.getElementById('s1').value), e1 = toM(document.getElementById('e1').value);
+            const s2 = toM(document.getElementById('s2').value), e2 = toM(document.getElementById('e2').value);
             
-            let val = 0, hStr = "", durH = 0;
+            let val = 0, hStr = "", dur = 0;
 
             if(t.includes('Pose') || t === 'Jours OFF') {
                 val = t === 'Pose Piges' ? rates.piges : (t === 'Pose Omnes' ? rates.omnes : rates.off);
                 hStr = "FORFAIT";
             } else {
                 let totalMin = 0;
-                let mDur = (ms !== null && me !== null) ? (me - ms) : 0;
-                let aDur = (as !== null && ae !== null) ? (ae - as) : 0;
-                
-                if (ms !== null && ae !== null && me === null && as === null) {
-                    totalMin = ae - ms;
-                    hStr = $('s1').value + " - " + $('e2').value;
+                // Cas journée continue (S1 et E2 remplis uniquement)
+                if (s1 > 0 && e2 > 0 && e1 === 0 && s2 === 0) {
+                    totalMin = e2 - s1;
+                    hStr = document.getElementById('s1').value + "-" + document.getElementById('e2').value;
                 } else {
-                    totalMin = mDur + aDur;
-                    let p1 = (ms !== null && me !== null) ? $('s1').value + "-" + $('e1').value : "";
-                    let p2 = (as !== null && ae !== null) ? $('s2').value + "-" + $('e2').value : "";
+                    totalMin = (e1 - s1) + (e2 - s2);
+                    let p1 = (s1 < e1) ? document.getElementById('s1').value + "-" + document.getElementById('e1').value : "";
+                    let p2 = (s2 < e2) ? document.getElementById('s2').value + "-" + document.getElementById('e2').value : "";
                     hStr = (p1 && p2) ? p1 + " / " + p2 : (p1 || p2);
                 }
-                
-                if(totalMin <= 0) return alert("Vérifiez les heures");
-                durH = totalMin / 60;
-                val = durH * (t === 'Production' ? rates.prod : rates.trajet);
+                dur = totalMin / 60;
+                val = dur * (t === 'Production' ? rates.prod : rates.trajet);
             }
 
-            db.unshift({ id: Date.now(), d, p, t, val, hStr, durH });
-            localStorage.setItem('PT44_DATA', JSON.stringify(db));
-            alert("Enregistré !");
-            ['in-proj','s1','e1','s2','e2'].forEach(id => $(id).value = "");
+            db.unshift({ id: Date.now(), d, p, t, val, hStr, dur });
+            localStorage.setItem('PT52_DATA', JSON.stringify(db));
+            ['in-proj','s1','e1','s2','e2'].forEach(id => document.getElementById(id).value = "");
             render();
-        };
+            alert("Enregistré");
+        }
 
         function render() {
+            // Auto-complétion
             const projs = [...new Set(db.map(x => x.p))];
-            $('plist').innerHTML = projs.map(p => `<option value="${p}">`).join('');
+            document.getElementById('plist').innerHTML = projs.map(p => `<option value="${p}">`).join('');
 
-            $('recent-list').innerHTML = db.slice(0, 3).map(o => `
-                <div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-left:4px solid #3b82f6;">
-                    <div style="font-size:11px;"><b>${o.p}</b><br>${o.hStr}</div>
-                    <b style="color:#60a5fa;">${o.val.toFixed(2)}€</b>
-                </div>`).join('');
+            document.getElementById('recent-list').innerHTML = db.slice(0, 2).map(o => `<div class="card" style="font-size:12px; border-left:4px solid #3b82f6;"><b>${o.p}</b> - ${o.val.toFixed(2)}€</div>`).join('');
             
             let groups = db.reduce((acc, o) => { (acc[o.p] = acc[o.p] || []).push(o); return acc; }, {});
             let hB = "", hA = "", tAF = 0, tF = 0;
@@ -183,35 +153,42 @@
                 
                 let rows = groups[proj].map(o => `
                     <div class="row">
-                        <span style="color:#94a3b8; font-size:11px; width:70px;">${o.d.split('-').reverse().join('/')}</span>
+                        <span style="font-size:11px; width:75px;">${o.d.split('-').reverse().join('/')}</span>
                         <div style="flex:1; text-align:center;">
                             <span style="font-weight:bold; font-size:11px;">${o.hStr}</span>
-                            ${o.durH > 0 ? `<span class="hour-badge">${o.durH.toFixed(2)}h</span>` : ''}
+                            ${o.dur > 0 ? `<span class="blue-hours">${o.dur.toFixed(2)}h</span>` : ''}
                         </div>
-                        <div style="width:85px; text-align:right;">
+                        <div style="width:80px; text-align:right;">
                             <b style="font-size:12px;">${o.val.toFixed(2)}€</b>
-                            <span onclick="delItem(event, ${o.id})" style="margin-left:10px; font-size:18px;">🗑️</span>
+                            <span onclick="delItem(${o.id})" style="margin-left:8px;">🗑️</span>
                         </div>
                     </div>`).join('');
                 
-                let card = `<div class="card" style="border-left:${(!isA && isB) ? '6px solid #ef4444' : '1px solid #334155'}">
-                    <div style="display:flex; justify-content:space-between; font-weight:900; margin-bottom:10px;"><span>${proj}</span><span style="color:#3b82f6;">${totalVal.toFixed(2)}€</span></div>
+                let card = `<div class="card" style="border-left:${(!isA && isB) ? '5px solid #ef4444' : '1px solid #334155'}">
+                    <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:10px;"><span>${proj}</span><span style="color:#3b82f6;">${totalVal.toFixed(2)}€</span></div>
                     ${rows}
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:15px;">
-                        ${isA ? `<div class="btn-sec" onclick="toggleArch(event, '${proj.replace(/'/g,"\\'")}')">Réactiver</div>` : 
-                        `<div class="btn-sec" onclick="toggleBill(event, '${proj.replace(/'/g,"\\'")}')" style="background:${isB?'#1e293b':'#334155'}">${isB?'À FACTURER':'FACTURÉ'}</div>
-                         <div class="btn-sec" onclick="toggleArch(event, '${proj.replace(/'/g,"\\'")}')" style="color:#60a5fa">ARCHIVER</div>`}
+                    <div class="grid" style="margin-top:10px;">
+                        ${isA ? `<div class="btn-sec" onclick="toggleArch('${proj}')">Réactiver</div>` : 
+                        `<div class="btn-sec" onclick="toggleBill('${proj}')">${isB?'À FACTURER':'FACTURÉ'}</div>
+                         <div class="btn-sec" onclick="toggleArch('${proj}')" style="color:#60a5fa">ARCHIVER</div>`}
                     </div>
                 </div>`;
                 if(isA) hA += card; else hB += card;
             }
-            $('list-bilan').innerHTML = hB || "Vide";
-            $('list-archive').innerHTML = hA || "Vide";
-            $('sum-af').innerText = tAF.toFixed(2) + " €";
-            $('sum-f').innerText = tF.toFixed(2) + " €";
+            document.getElementById('list-bilan').innerHTML = hB || "Aucune donnée";
+            document.getElementById('list-archive').innerHTML = hA || "Aucune archive";
+            document.getElementById('sum-af').innerText = tAF.toFixed(2) + "€";
+            document.getElementById('sum-f').innerText = tF.toFixed(2) + "€";
         }
 
-        window.delItem = function(e, id) { e.stopPropagation(); if(confirm("Supprimer ?")) { db = db.filter(x => x.id !== id); localStorage.setItem('PT44_DATA', JSON.stringify(db)); render(); } };
-        window.toggleBill = function(e, p) { e.stopPropagation(); billed.includes(p) ? billed = billed.filter(x => x!==p) : billed.push(p); localStorage.setItem('PT44_BILL', JSON.stringify(billed)); render(); };
-        window.toggleArch = function(e, p) { e.stopPropagation(); archived.includes(p) ? archived = archived.filter(x => x!==p) : archived.push(p); localStorage.setItem('PT44_ARCH', JSON.stringify(archived)); render(); };
-        window.openSet = function(e) { if(e) e.stopPropagation(); const labels = { prod:'Prod (€/h)', trajet:'Trajet (€/h)', piges:'Piges (€)', omnes:'Omnes (€)', off:'OFF (€)' }; $('price-inputs').innerHTML = Object.keys(rates).map
+        function delItem(id) { if(confirm("Supprimer ?")) { db = db.filter(x => x.id !== id); localStorage.setItem('PT52_DATA', JSON.stringify(db)); render(); } }
+        function toggleBill(p) { billed.includes(p) ? billed = billed.filter(x => x!==p) : billed.push(p); localStorage.setItem('PT52_BILL', JSON.stringify(billed)); render(); }
+        function toggleArch(p) { archived.includes(p) ? archived = archived.filter(x => x!==p) : archived.push(p); localStorage.setItem('PT52_ARCH', JSON.stringify(archived)); render(); }
+        function openSet() { document.getElementById('price-inputs').innerHTML = Object.keys(rates).map(k => `<label class="label">${k}</label><input type="number" id="rt-${k}" value="${rates[k]}" class="input">`).join(''); document.getElementById('set-modal').style.display = 'flex'; }
+        function closeSet() { Object.keys(rates).forEach(k => rates[k] = parseFloat(document.getElementById(`rt-${k}`).value)); localStorage.setItem('PT52_RATE', JSON.stringify(rates)); document.getElementById('set-modal').style.display = 'none'; render(); }
+
+        document.getElementById('in-date').valueAsDate = new Date();
+        render();
+    </script>
+</body>
+</html>
