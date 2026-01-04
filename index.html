@@ -3,101 +3,147 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrack Simple</title>
+    <title>ProTrack Slider</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif; color: #f8fafc; overflow-x: hidden; }
+        body { background-color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif; color: #f8fafc; overflow: hidden; height: 100vh; }
+        
+        /* Conteneur du Slider */
+        .app-container {
+            display: flex;
+            width: 200%; /* Deux pages côte à côte */
+            height: 100vh;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .page { width: 50%; height: 100vh; overflow-y: auto; padding-bottom: 80px; }
+
+        /* Styles des cartes et inputs */
         .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; }
         .input-field { background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 12px; padding: 12px; font-size: 16px !important; }
-        .btn-primary { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); active: scale(0.95); }
+        .btn-primary { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
         .facture-true { border-left: 5px solid #ef4444 !important; opacity: 0.6; }
+
+        /* Navigation Basse */
+        .nav-bar {
+            position: fixed; bottom: 0; left: 0; right: 0; height: 70px;
+            background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255,255,255,0.1);
+            display: flex; justify-content: space-around; align-items: center; z-index: 100;
+        }
+        .nav-item { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #64748b; transition: 0.3s; }
+        .nav-item.active { color: #3b82f6; }
+        .nav-dot { width: 6px; height: 6px; background: #3b82f6; border-radius: 50%; margin: 4px auto 0; opacity: 0; }
+        .nav-item.active .nav-dot { opacity: 1; }
     </style>
 </head>
-<body class="p-4 pb-24">
+<body>
 
-    <div class="flex justify-between items-center mb-6">
-        <button onclick="toggleSettings(true)" class="w-10 h-10 glass-card flex items-center justify-center text-sm opacity-60">⚙️</button>
-        <button onclick="toggleModal(true)" class="btn-primary px-6 py-3 rounded-xl font-bold text-white shadow-lg text-[11px] uppercase tracking-[0.1em]">Bilan Global</button>
-    </div>
-
-    <div class="glass-card p-5 mb-8">
-        <div class="space-y-4">
-            <div class="grid grid-cols-2 gap-2">
-                <input type="date" id="date" class="input-field w-full">
-                <input type="text" id="project" list="project-list" class="input-field w-full" placeholder="Projet">
-            </div>
-            <datalist id="project-list"></datalist>
-
-            <select id="type" onchange="toggleInputs()" class="input-field w-full font-bold text-blue-400">
-                <option value="Production">Production</option>
-                <option value="Trajet">Trajet</option>
-                <option value="Pose Piges">Pose Piges</option>
-                <option value="Pose Omnes">Pose Omnes</option>
-                <option value="Jours OFF">Jours OFF</option>
-            </select>
-
-            <div id="section-hours" class="space-y-4 pt-2">
-                <div class="grid grid-cols-2 gap-2">
-                    <div class="text-[9px] uppercase font-bold text-slate-500 pl-1 italic">Début Matin</div>
-                    <div class="text-[9px] uppercase font-bold text-slate-500 pl-1 italic">Fin Matin</div>
-                    <input type="time" id="start1" class="input-field">
-                    <input type="time" id="end1" class="input-field">
-                </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <div class="text-[9px] uppercase font-bold text-slate-500 pl-1 italic">Début Reprise</div>
-                    <div class="text-[9px] uppercase font-bold text-slate-500 pl-1 italic">Fin Départ</div>
-                    <input type="time" id="start2" class="input-field">
-                    <input type="time" id="end2" class="input-field">
-                </div>
-                <p class="text-[8px] text-slate-500 italic text-center">Laisse vide les cases inutiles si tu ne prends pas de pause.</p>
-            </div>
-
-            <button onclick="addEntry()" class="w-full btn-primary py-4 rounded-xl font-black text-sm uppercase tracking-widest text-white mt-2">Enregistrer</button>
-        </div>
-    </div>
-
-    <h3 class="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-4 ml-1 italic">Dernières activités</h3>
-    <div id="recent-logs" class="space-y-3"></div>
-
-    <div id="modal" class="hidden fixed inset-0 bg-black/95 z-50 flex flex-col">
-        <div class="p-5 flex justify-between items-center border-b border-white/5">
-            <h2 class="font-bold text-sm uppercase italic tracking-widest">Récapitulatif</h2>
-            <button onclick="toggleModal(false)" class="p-2 text-xl">✕</button>
-        </div>
+    <div class="app-container" id="mainSlider">
         
-        <div class="flex-grow overflow-y-auto p-4">
-            <div class="grid grid-cols-2 gap-3 mb-8">
-                <div class="bg-blue-600/10 p-4 rounded-xl border border-blue-500/20">
-                    <p class="text-[8px] font-bold text-blue-400 uppercase mb-1 italic">À Facturer</p>
-                    <p id="total-pending" class="text-xl font-black text-blue-400">0.00 €</p>
-                </div>
-                <div class="bg-red-600/10 p-4 rounded-xl border border-red-500/20">
-                    <p class="text-[8px] font-bold text-red-400 uppercase mb-1 italic">Encaissé</p>
-                    <p id="total-billed" class="text-xl font-black text-red-400">0.00 €</p>
+        <div class="page p-4">
+            <div class="flex justify-between items-center mb-6">
+                <button onclick="toggleSettings(true)" class="w-10 h-10 glass-card flex items-center justify-center text-sm opacity-60">⚙️</button>
+                <div class="text-[10px] font-black uppercase text-slate-500 tracking-widest italic">Mode Saisie</div>
+            </div>
+
+            <div class="glass-card p-5 mb-8">
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="date" id="date" class="input-field w-full">
+                        <input type="text" id="project" list="project-list" class="input-field w-full" placeholder="Projet">
+                    </div>
+                    <datalist id="project-list"></datalist>
+
+                    <select id="type" onchange="toggleInputs()" class="input-field w-full font-bold text-blue-400">
+                        <option value="Production">Production</option>
+                        <option value="Trajet">Trajet</option>
+                        <option value="Pose Piges">Pose Piges</option>
+                        <option value="Pose Omnes">Pose Omnes</option>
+                        <option value="Jours OFF">Jours OFF</option>
+                    </select>
+
+                    <div id="section-hours" class="space-y-4 pt-2">
+                        <div class="grid grid-cols-2 gap-2 text-[9px] uppercase font-bold text-slate-500 pl-1 italic">
+                            <span>Début Matin</span><span>Fin Matin</span>
+                            <input type="time" id="start1" class="input-field w-full">
+                            <input type="time" id="end1" class="input-field w-full">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 text-[9px] uppercase font-bold text-slate-500 pl-1 italic">
+                            <span>Reprise</span><span>Fin Départ</span>
+                            <input type="time" id="start2" class="input-field w-full">
+                            <input type="time" id="end2" class="input-field w-full">
+                        </div>
+                    </div>
+                    <button onclick="addEntry()" class="w-full btn-primary py-4 rounded-xl font-black text-sm uppercase tracking-widest text-white mt-2">Enregistrer</button>
                 </div>
             </div>
-            <div id="tableContainer" class="space-y-6"></div>
+
+            <h3 class="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-4 ml-1 italic">Dernières entrées</h3>
+            <div id="recent-logs" class="space-y-3"></div>
         </div>
 
-        <div class="p-4 border-t border-white/10 bg-slate-900 grid grid-cols-2 gap-2">
-            <button onclick="copyToClipboard()" class="bg-white/5 text-white py-4 rounded-xl text-[9px] font-bold uppercase tracking-widest">Copier Notes</button>
-            <button onclick="exportCSV()" class="bg-emerald-800 text-white py-4 rounded-xl text-[9px] font-bold uppercase tracking-widest">Excel</button>
+        <div class="page p-4">
+            <div class="mb-6">
+                <h2 class="font-bold text-sm uppercase italic tracking-widest text-center mt-2">Récapitulatif Global</h2>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 mb-6">
+                <div class="bg-blue-600/10 p-4 rounded-xl border border-blue-500/20 text-center">
+                    <p class="text-[8px] font-bold text-blue-400 uppercase mb-1">Encours</p>
+                    <p id="total-pending" class="text-lg font-black text-blue-400">0.00 €</p>
+                </div>
+                <div class="bg-red-600/10 p-4 rounded-xl border border-red-500/20 text-center">
+                    <p class="text-[8px] font-bold text-red-400 uppercase mb-1">Payé</p>
+                    <p id="total-billed" class="text-lg font-black text-red-400">0.00 €</p>
+                </div>
+            </div>
+
+            <div id="tableContainer" class="space-y-6"></div>
+
+            <div class="mt-8 grid grid-cols-2 gap-2 pb-10">
+                <button onclick="copyToClipboard()" class="bg-white/5 text-white py-4 rounded-xl text-[9px] font-bold uppercase tracking-widest">📋 Notes</button>
+                <button onclick="exportCSV()" class="bg-emerald-800 text-white py-4 rounded-xl text-[9px] font-bold uppercase tracking-widest">📊 Excel</button>
+            </div>
         </div>
+
     </div>
 
-    <div id="settings-modal" class="hidden fixed inset-0 bg-black/95 flex items-center justify-center p-6 z-[100]">
+    <nav class="nav-bar">
+        <div id="nav-saisie" onclick="goToPage(0)" class="nav-item active">
+            SAISIE <div class="nav-dot"></div>
+        </div>
+        <div id="nav-bilan" onclick="goToPage(1)" class="nav-item">
+            BILAN <div class="nav-dot"></div>
+        </div>
+    </nav>
+
+    <div id="settings-modal" class="hidden fixed inset-0 bg-black/95 flex items-center justify-center p-6 z-[200]">
         <div class="glass-card w-full p-6 max-w-sm">
             <h2 class="text-center font-bold mb-8 uppercase text-sm tracking-widest italic">Tarification</h2>
             <div class="space-y-5" id="settings-list"></div>
-            <button onclick="saveSettings()" class="w-full btn-primary text-white py-4 rounded-xl font-bold mt-8">Valider</button>
-            <button onclick="toggleSettings(false)" class="w-full text-slate-600 text-[10px] mt-4 uppercase">Annuler</button>
+            <button onclick="saveSettings()" class="w-full btn-primary text-white py-4 rounded-xl font-bold mt-8">VALIDER</button>
+            <button onclick="toggleSettings(false)" class="w-full text-slate-600 text-[10px] mt-4 text-center">ANNULER</button>
         </div>
     </div>
 
     <script>
-        let settings = JSON.parse(localStorage.getItem('pro_settings_v19')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
+        let settings = JSON.parse(localStorage.getItem('pro_settings_v20')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
         document.getElementById('date').valueAsDate = new Date();
+
+        // Gestion du Slider
+        function goToPage(index) {
+            const slider = document.getElementById('mainSlider');
+            slider.style.transform = `translateX(-${index * 50}%)`;
+            
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            if(index === 0) {
+                document.getElementById('nav-saisie').classList.add('active');
+            } else {
+                document.getElementById('nav-bilan').classList.add('active');
+                render(); // Rafraîchir le bilan quand on y va
+            }
+        }
 
         function formatDate(iso) { const [y, m, d] = iso.split('-'); return `${d}/${m}/${y}`; }
 
@@ -109,7 +155,7 @@
         function toggleSettings(s) { 
             document.getElementById('settings-modal').classList.toggle('hidden', !s); 
             if(s) {
-                const labels = { prod: 'Prod (€/h)', trajet: 'Trajet (€/h)', piges: 'Piges', omnes: 'Omnes', off: 'OFF' };
+                const labels = { prod: 'Prod (€/h)', trajet: 'Trajet (€/h)', piges: 'Piges (€)', omnes: 'Omnes (€)', off: 'OFF (€)' };
                 document.getElementById('settings-list').innerHTML = Object.keys(settings).map(k => `
                     <div class="flex justify-between items-center"><label class="text-[10px] uppercase font-bold text-slate-400">${labels[k]}</label><input type="number" id="price-${k}" value="${settings[k]}" class="input-field w-24 text-right"></div>
                 `).join('');
@@ -118,60 +164,43 @@
 
         function saveSettings() { 
             Object.keys(settings).forEach(k => settings[k] = parseFloat(document.getElementById(`price-${k}`).value));
-            localStorage.setItem('pro_settings_v19', JSON.stringify(settings)); toggleSettings(false); render(); 
+            localStorage.setItem('pro_settings_v20', JSON.stringify(settings)); toggleSettings(false); render(); 
         }
 
-        function getMinutes(timeStr) {
-            if(!timeStr) return null;
-            const [h, m] = timeStr.split(':');
-            return parseInt(h) * 60 + parseInt(m);
-        }
+        function getMinutes(t) { if(!t) return null; const [h, m] = t.split(':'); return parseInt(h)*60 + parseInt(m); }
 
         function addEntry() {
             const date = document.getElementById('date').value, project = document.getElementById('project').value || "DIVERS", type = document.getElementById('type').value;
             let val = 0, detail = "";
 
-            if (type.includes('Pose') || type === 'Jours OFF') { 
-                val = settings[type === 'Pose Piges' ? 'piges' : (type === 'Pose Omnes' ? 'omnes' : 'off')]; 
-                detail = "FORFAIT"; 
+            if (type.includes('Pose') || type === 'Jours OFF') {
+                val = settings[type === 'Pose Piges' ? 'piges' : (type === 'Pose Omnes' ? 'omnes' : 'off')]; detail = "FORFAIT";
             } else {
-                const s1 = getMinutes(document.getElementById('start1').value);
-                const e1 = getMinutes(document.getElementById('end1').value);
-                const s2 = getMinutes(document.getElementById('start2').value);
-                const e2 = getMinutes(document.getElementById('end2').value);
-                
-                let totalMin = 0;
-                let textDetail = "";
+                const s1 = getMinutes(document.getElementById('start1').value), e1 = getMinutes(document.getElementById('end1').value);
+                const s2 = getMinutes(document.getElementById('start2').value), e2 = getMinutes(document.getElementById('end2').value);
+                let total = 0, txt = "";
 
-                // CAS 1 : Journée continue (Début 1 et Fin 2 remplis)
                 if(s1 !== null && e2 !== null && e1 === null && s2 === null) {
-                    totalMin = e2 - s1;
-                    textDetail = `${document.getElementById('start1').value} > ${document.getElementById('end2').value}`;
-                } 
-                // CAS 2 : Deux sessions (Classique)
-                else {
-                    const d1 = (s1 !== null && e1 !== null) ? (e1 - s1) : 0;
-                    const d2 = (s2 !== null && e2 !== null) ? (e2 - s2) : 0;
-                    totalMin = d1 + d2;
-                    textDetail = (s1 !== null ? document.getElementById('start1').value + '-' + document.getElementById('end1').value : "") + 
-                                 (s2 !== null ? " / " + document.getElementById('start2').value + '-' + document.getElementById('end2').value : "");
+                    total = e2 - s1; txt = `${document.getElementById('start1').value} > ${document.getElementById('end2').value}`;
+                } else {
+                    total = ((s1 !== null && e1 !== null) ? (e1-s1) : 0) + ((s2 !== null && e2 !== null) ? (e2-s2) : 0);
+                    txt = (s1 !== null ? document.getElementById('start1').value + '-' + document.getElementById('end1').value : "") + (s2 !== null ? " / " + document.getElementById('start2').value + '-' + document.getElementById('end2').value : "");
                 }
-
-                if(totalMin <= 0) return alert("Vérifie tes horaires !");
-                
-                val = (totalMin / 60) * (type === 'Production' ? settings.prod : settings.trajet);
-                detail = `${textDetail} (${Math.floor(totalMin/60)}h${(totalMin%60).toString().padStart(2, '0')})`;
+                if(total <= 0) return alert("Horaires ?");
+                val = (total / 60) * (type === 'Production' ? settings.prod : settings.trajet);
+                detail = `${txt} (${Math.floor(total/60)}h${(total%60).toString().padStart(2, '0')})`;
             }
 
-            let logs = JSON.parse(localStorage.getItem('pro_data_v19') || '[]');
+            let logs = JSON.parse(localStorage.getItem('pro_data_v20') || '[]');
             logs.unshift({ id: Date.now(), date, project: project.toUpperCase(), type, val, detail });
-            localStorage.setItem('pro_data_v19', JSON.stringify(logs)); render();
+            localStorage.setItem('pro_data_v20', JSON.stringify(logs));
             ['project','start1','end1','start2','end2'].forEach(id => document.getElementById(id).value = "");
+            render();
         }
 
         function render() {
-            const logs = JSON.parse(localStorage.getItem('pro_data_v19') || '[]');
-            const billedList = JSON.parse(localStorage.getItem('billed_v19') || '[]');
+            const logs = JSON.parse(localStorage.getItem('pro_data_v20') || '[]');
+            const billedList = JSON.parse(localStorage.getItem('billed_v20') || '[]');
             document.getElementById('project-list').innerHTML = [...new Set(logs.map(l => l.project))].map(p => `<option value="${p}">`).join('');
 
             document.getElementById('recent-logs').innerHTML = logs.slice(0, 5).map(l => `
@@ -206,16 +235,15 @@
                     <div class="px-4 pb-2">${rows}</div>
                 </div>`;
             }
-            document.getElementById('tableContainer').innerHTML = html || "<p class='text-center text-[10px] text-slate-700 uppercase py-10'>Aucune donnée</p>";
+            document.getElementById('tableContainer').innerHTML = html || "<p class='text-center text-[10px] text-slate-700 uppercase py-10'>Aucune archive</p>";
             document.getElementById('total-pending').innerText = tP.toFixed(2) + " €";
             document.getElementById('total-billed').innerText = tB.toFixed(2) + " €";
         }
 
-        function toggleFacture(proj) { let b = JSON.parse(localStorage.getItem('billed_v19') || '[]'); b.includes(proj) ? b = b.filter(p => p !== proj) : b.push(proj); localStorage.setItem('billed_v19', JSON.stringify(b)); render(); }
-        function deleteItem(id) { if(confirm("Supprimer ?")) { let l = JSON.parse(localStorage.getItem('pro_data_v19') || '[]'); l = l.filter(i => i.id !== id); localStorage.setItem('pro_data_v19', JSON.stringify(l)); render(); } }
-        function toggleModal(s) { document.getElementById('modal').classList.toggle('hidden', !s); if(s) render(); }
-        function exportCSV() { const logs = JSON.parse(localStorage.getItem('pro_data_v19') || '[]'); let csv = "Date;Projet;Activite;Duree;Montant\n"; logs.forEach(l => csv += `${formatDate(l.date)};${l.project};${l.type};${l.detail};${l.val.toFixed(2)}\n`); const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'})); link.download = "ProTrack_Mobile.csv"; link.click(); }
-        function copyToClipboard() { const logs = JSON.parse(localStorage.getItem('pro_data_v19') || '[]'); let t = "RECAP\n\n"; logs.forEach(l => t += `${formatDate(l.date)} | ${l.project} | ${l.detail} | ${l.val.toFixed(2)}€\n`); navigator.clipboard.writeText(t).then(() => alert("Copié !")); }
+        function toggleFacture(p) { let b = JSON.parse(localStorage.getItem('billed_v20') || '[]'); b.includes(p) ? b = b.filter(x => x !== p) : b.push(p); localStorage.setItem('billed_v20', JSON.stringify(b)); render(); }
+        function deleteItem(id) { if(confirm("Supprimer ?")) { let l = JSON.parse(localStorage.getItem('pro_data_v20') || '[]'); l = l.filter(i => i.id !== id); localStorage.setItem('pro_data_v20', JSON.stringify(l)); render(); } }
+        function exportCSV() { const logs = JSON.parse(localStorage.getItem('pro_data_v20') || '[]'); let csv = "Date;Projet;Activite;Duree;Montant\n"; logs.forEach(l => csv += `${formatDate(l.date)};${l.project};${l.type};${l.detail};${l.val.toFixed(2)}\n`); const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'})); link.download = "ProTrack_Mobile.csv"; link.click(); }
+        function copyToClipboard() { const logs = JSON.parse(localStorage.getItem('pro_data_v20') || '[]'); let t = "RECAP\n\n"; logs.forEach(l => t += `${formatDate(l.date)} | ${l.project} | ${l.val.toFixed(2)}€\n`); navigator.clipboard.writeText(t).then(() => alert("Copié !")); }
         render(); toggleInputs();
     </script>
 </body>
