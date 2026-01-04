@@ -3,255 +3,215 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrack V25 FINAL</title>
+    <title>ProTrack V26</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { background-color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif; color: #f8fafc; margin: 0; overflow: hidden; height: 100vh; }
-        
-        /* Conteneur de slide */
-        #viewport {
-            display: flex;
-            width: 100vw;
-            height: 100vh;
-            overflow-x: auto;
-            scroll-snap-type: x mandatory;
-            scroll-behavior: smooth;
-        }
-        #viewport::-webkit-scrollbar { display: none; }
-        
-        .page {
-            flex: 0 0 100vw;
-            width: 100vw;
-            height: 100vh;
-            scroll-snap-align: start;
-            overflow-y: auto;
-            padding: 20px 20px 120px 20px;
-        }
-
-        .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; }
-        .input-field { background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 12px; padding: 12px; font-size: 16px !important; width: 100%; appearance: none; }
-        .btn-primary { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); transition: transform 0.1s; }
-        .btn-primary:active { transform: scale(0.98); }
-        .facture-true { border-left: 5px solid #ef4444 !important; opacity: 0.6; }
-
-        .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 80px; background: #0f172a; border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-around; align-items: center; z-index: 100; }
-        .nav-item { font-size: 10px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 1px; }
+        body { background: #0f172a; font-family: sans-serif; color: white; margin: 0; overflow: hidden; }
+        .viewport { display: flex; width: 100vw; height: 100vh; overflow-x: auto; scroll-snap-type: x mandatory; }
+        .page { flex: 0 0 100vw; width: 100vw; height: 100vh; scroll-snap-align: start; overflow-y: auto; padding: 20px; padding-bottom: 100px; }
+        .card { background: rgba(30, 41, 59, 0.8); border-radius: 15px; padding: 15px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.1); }
+        input, select { background: #0f172a; color: white; border: 1px solid #334155; padding: 10px; border-radius: 8px; width: 100%; margin-top: 5px; font-size: 16px !important; }
+        .btn { background: #3b82f6; color: white; font-weight: bold; padding: 15px; border-radius: 10px; width: 100%; border: none; margin-top: 10px; }
+        .nav { position: fixed; bottom: 0; width: 100%; height: 70px; background: #1e293b; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #334155; }
+        .nav-item { color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase; }
         .nav-item.active { color: #3b82f6; }
+        .archive-btn { background: #1e293b; font-size: 10px; padding: 5px 10px; border-radius: 5px; border: 1px solid #475569; }
     </style>
 </head>
 <body>
 
-    <div id="viewport">
-        
-        <div class="page" id="page-saisie">
-            <div class="flex justify-between items-center mb-6">
-                <button onclick="toggleSettings(true)" class="w-10 h-10 glass-card flex items-center justify-center text-xs">⚙️</button>
-                <div class="text-[10px] font-black uppercase text-slate-500 tracking-widest italic">Saisie</div>
-            </div>
-
-            <div class="glass-card p-5 mb-8">
-                <div class="space-y-4">
-                    <div class="grid grid-cols-2 gap-2">
-                        <input type="date" id="date" class="input-field">
-                        <input type="text" id="project" list="project-list" class="input-field" placeholder="Projet">
-                    </div>
-                    <datalist id="project-list"></datalist>
-                    
-                    <select id="type" onchange="toggleInputs()" class="input-field font-bold text-blue-400">
-                        <option value="Production">Production</option>
-                        <option value="Trajet">Trajet</option>
-                        <option value="Pose Piges">Pose Piges</option>
-                        <option value="Pose Omnes">Pose Omnes</option>
-                        <option value="Jours OFF">Jours OFF</option>
-                    </select>
-
-                    <div id="section-hours" class="space-y-4 pt-2">
-                        <div class="grid grid-cols-2 gap-2 text-[9px] font-bold text-slate-500 italic uppercase">
-                            <span>Matin</span><span>Fin</span>
-                            <input type="time" id="start1" class="input-field">
-                            <input type="time" id="end1" class="input-field">
-                            <span>Reprise</span><span>Départ</span>
-                            <input type="time" id="start2" class="input-field">
-                            <input type="time" id="end2" class="input-field">
-                        </div>
-                    </div>
-                    
-                    <button id="mainBtn" onclick="addEntry()" class="w-full btn-primary py-4 rounded-xl font-black text-sm uppercase tracking-widest text-white mt-2 shadow-lg">
-                        Enregistrer
-                    </button>
+<div class="viewport" id="vp">
+    <div class="page">
+        <h2 style="font-weight: 900; color: #64748b; margin-bottom: 20px;">SAISIE</h2>
+        <div class="card">
+            <input type="date" id="date">
+            <input type="text" id="project" placeholder="NOM DU PROJET" list="list-p">
+            <datalist id="list-p"></datalist>
+            <select id="type" onchange="checkType()">
+                <option value="Production">Production</option>
+                <option value="Trajet">Trajet</option>
+                <option value="Pose Piges">Pose Piges</option>
+                <option value="Pose Omnes">Pose Omnes</option>
+                <option value="Jours OFF">Jours OFF</option>
+            </select>
+            <div id="hours-div">
+                <div style="display:grid; grid-template-cols: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                    <div><small>MATIN DEBUT</small><input type="time" id="s1"></div>
+                    <div><small>MATIN FIN</small><input type="time" id="e1"></div>
+                    <div><small>APREM DEBUT</small><input type="time" id="s2"></div>
+                    <div><small>APREM FIN</small><input type="time" id="e2"></div>
                 </div>
             </div>
+            <button class="btn" onclick="save()">ENREGISTRER</button>
+        </div>
+        <div id="recent"></div>
+    </div>
+
+    <div class="page">
+        <h2 style="font-weight: 900; color: #64748b; margin-bottom: 20px;">BILAN FACTURATION</h2>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:20px;">
+            <div class="card" style="text-align:center; margin:0;">
+                <small style="color:#3b82f6">À FACTURER</small><br>
+                <b id="t-p" style="font-size:18px">0 €</b>
+            </div>
+            <div class="card" style="text-align:center; margin:0;">
+                <small style="color:#ef4444">FACTURÉ</small><br>
+                <b id="t-b" style="font-size:18px">0 €</b>
+            </div>
+        </div>
+        <div id="list-bilan"></div>
+        <button onclick="copy('bilan')" class="btn" style="background:#475569">COPIER POUR NOTES</button>
+    </div>
+
+    <div class="page">
+        <h2 style="font-weight: 900; color: #64748b; margin-bottom: 20px;">ARCHIVES</h2>
+        <div id="list-archive"></div>
+        <button onclick="copy('archive')" class="btn" style="background:#475569">COPIER ARCHIVES</button>
+    </div>
+</div>
+
+<div class="nav">
+    <div class="nav-item active" onclick="go(0)">Saisie</div>
+    <div class="nav-item" onclick="go(1)">Bilan</div>
+    <div class="nav-item" onclick="go(2)">Archives</div>
+</div>
+
+<script>
+    let db = JSON.parse(localStorage.getItem('protrack_db') || '[]');
+    let billed = JSON.parse(localStorage.getItem('protrack_billed') || '[]');
+    let archived = JSON.parse(localStorage.getItem('protrack_archived') || '[]');
+    let prices = { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
+
+    document.getElementById('date').valueAsDate = new Date();
+
+    function go(i) { document.getElementById('vp').scrollTo({left: i * window.innerWidth, behavior:'smooth'}); }
+
+    function checkType() {
+        let t = document.getElementById('type').value;
+        document.getElementById('hours-div').style.display = (t.includes('Pose') || t === 'Jours OFF') ? 'none' : 'block';
+    }
+
+    function save() {
+        try {
+            const d = document.getElementById('date').value;
+            const p = document.getElementById('project').value.toUpperCase() || "DIVERS";
+            const t = document.getElementById('type').value;
+            if(!d) return alert("Mets une date");
+
+            let totalVal = 0;
+            let info = "";
+
+            if(t.includes('Pose') || t === 'Jours OFF') {
+                totalVal = t === 'Pose Piges' ? prices.piges : (t === 'Pose Omnes' ? prices.omnes : prices.off);
+                info = "FORFAIT";
+            } else {
+                const s1 = document.getElementById('s1').value, e1 = document.getElementById('e1').value;
+                const s2 = document.getElementById('s2').value, e2 = document.getElementById('e2').value;
+                
+                const toMin = (v) => { if(!v) return 0; const [h,m] = v.split(':'); return parseInt(h)*60 + parseInt(m); };
+                let m1 = toMin(e1) - toMin(s1);
+                let m2 = toMin(e2) - toMin(s2);
+                let totalMin = (m1 > 0 ? m1 : 0) + (m2 > 0 ? m2 : 0);
+                
+                if(totalMin === 0) return alert("Vérifie les heures");
+                totalVal = (totalMin / 60) * (t === 'Production' ? prices.prod : prices.trajet);
+                info = Math.floor(totalMin/60) + "h" + (totalMin%60);
+            }
+
+            db.unshift({ id: Date.now(), date: d, project: p, type: t, val: totalVal, info: info });
+            localStorage.setItem('protrack_db', JSON.stringify(db));
             
-            <h3 class="text-[10px] font-black text-slate-600 uppercase mb-4 italic pl-1">Activités récentes</h3>
-            <div id="recent-logs" class="space-y-3"></div>
-        </div>
+            // Clear
+            document.getElementById('project').value = "";
+            ['s1','e1','s2','e2'].forEach(id => document.getElementById(id).value = "");
+            
+            render();
+            alert("Enregistré !");
+        } catch(e) { alert("Erreur: " + e.message); }
+    }
 
-        <div class="page" id="page-bilan">
-            <h2 class="font-black text-xs uppercase italic tracking-widest text-center mb-6">Bilan En Cours</h2>
-            <div class="grid grid-cols-2 gap-3 mb-6">
-                <div class="bg-blue-600/10 p-4 rounded-xl border border-blue-500/20 text-center">
-                    <p class="text-[8px] font-bold text-blue-400 uppercase mb-1">En Cours</p>
-                    <p id="total-pending" class="text-lg font-black text-blue-400">0.00 €</p>
-                </div>
-                <div class="bg-red-600/10 p-4 rounded-xl border border-red-500/20 text-center">
-                    <p class="text-[8px] font-bold text-red-400 uppercase mb-1">Facturé</p>
-                    <p id="total-billed" class="text-lg font-black text-red-400">0.00 €</p>
-                </div>
-            </div>
-            <div id="table-active" class="space-y-4"></div>
-            <button onclick="copyToClipboard('active')" class="w-full bg-white/5 text-white py-4 rounded-xl text-[10px] font-bold uppercase mt-8">Copier Bilan (Notes)</button>
-        </div>
-
-        <div class="page" id="page-archives">
-            <h2 class="font-black text-xs uppercase italic tracking-widest text-center mb-6 text-slate-500">Archives</h2>
-            <div id="table-archive" class="space-y-4"></div>
-            <div class="mt-8 flex gap-2">
-                <button onclick="copyToClipboard('archive')" class="flex-grow bg-white/5 text-white py-4 rounded-xl text-[10px] font-bold uppercase">Copier Archives</button>
-                <button onclick="exportCSV()" class="bg-emerald-800 text-white px-6 rounded-xl text-[10px] font-bold uppercase tracking-tighter">Excel</button>
-            </div>
-        </div>
-
-    </div>
-
-    <nav class="nav-bar">
-        <div onclick="jump(0)" class="nav-item active" id="nav0">Saisie</div>
-        <div onclick="jump(1)" class="nav-item" id="nav1">Bilan</div>
-        <div onclick="jump(2)" class="nav-item" id="nav2">Archives</div>
-    </nav>
-
-    <div id="settings-modal" class="hidden fixed inset-0 bg-black/95 flex items-center justify-center p-6 z-[200]">
-        <div class="glass-card w-full p-6 max-w-sm">
-            <h2 class="text-center font-bold mb-8 uppercase text-xs tracking-widest">Tarification</h2>
-            <div class="space-y-4" id="settings-list"></div>
-            <button onclick="saveSettings()" class="w-full btn-primary text-white py-4 rounded-xl font-bold mt-8">VALIDER</button>
-            <button onclick="toggleSettings(false)" class="w-full text-slate-600 text-[10px] mt-4 font-bold uppercase">Fermer</button>
-        </div>
-    </div>
-
-    <script>
-        // Clés de stockage
-        const DATA_KEY = 'PT_Data_V25';
-        const SETTINGS_KEY = 'PT_Settings_V25';
-        const STATUS_KEY = 'PT_Status_V25'; // Pour Facturé/En cours
-        const ARCHIVE_KEY = 'PT_Archived_V25';
-
-        let settings = JSON.parse(localStorage.getItem(SETTINGS_KEY)) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
-        document.getElementById('date').valueAsDate = new Date();
-
-        // Navigation
-        const vp = document.getElementById('viewport');
-        function jump(i) { vp.scrollTo({ left: i * window.innerWidth, behavior: 'smooth' }); }
+    function render() {
+        const rec = document.getElementById('recent');
+        const bil = document.getElementById('list-bilan');
+        const arc = document.getElementById('list-archive');
         
-        vp.addEventListener('scroll', () => {
-            const i = Math.round(vp.scrollLeft / window.innerWidth);
-            document.querySelectorAll('.nav-item').forEach((el, idx) => el.classList.toggle('active', i === idx));
+        // Accueil
+        rec.innerHTML = '<small style="color:#64748b">DERNIERS ENREGISTREMENTS</small>';
+        db.slice(0,3).forEach(l => {
+            rec.innerHTML += `<div class="card" style="padding:10px; margin-top:5px; font-size:12px">
+                <b>${l.project}</b> - ${l.val.toFixed(2)}€ <br> <small>${l.date} | ${l.type}</small>
+            </div>`;
         });
 
-        function toggleInputs() {
-            const t = document.getElementById('type').value;
-            document.getElementById('section-hours').style.display = (t.includes('Pose') || t === 'Jours OFF') ? 'none' : 'block';
+        // Groupement pour Bilan et Archives
+        let groups = db.reduce((acc, l) => {
+            acc[l.project] = acc[l.project] || [];
+            acc[l.project].push(l);
+            return acc;
+        }, {});
+
+        bil.innerHTML = "";
+        arc.innerHTML = "";
+        let totP = 0, totB = 0;
+
+        for (let p in groups) {
+            let isA = archived.includes(p);
+            let isB = billed.includes(p);
+            let sum = groups[p].reduce((s, l) => s + l.val, 0);
+
+            if(!isA) { if(isB) totB += sum; else totP += sum; }
+
+            let html = `<div class="card" style="${isB && !isA ? 'border-left:4px solid #ef4444' : ''}">
+                <div style="display:flex; justify-content:space-between; align-items:center mb-2">
+                    <b>${p}</b> <span>${sum.toFixed(2)}€</span>
+                </div>
+                <div style="display:flex; gap:5px; margin-top:10px">
+                    <button onclick="toggleB('${p}')" class="archive-btn">${isB ? 'OUVRIR' : 'FACTURÉ'}</button>
+                    <button onclick="toggleA('${p}')" class="archive-btn">${isA ? 'DÉ-ARCHIVER' : 'ARCHIVER'}</button>
+                </div>
+            </div>`;
+
+            if(isA) arc.innerHTML += html; else bil.innerHTML += html;
         }
 
-        function toggleSettings(s) {
-            document.getElementById('settings-modal').classList.toggle('hidden', !s);
-            if(s) {
-                const labels = { prod: 'Prod (€/h)', trajet: 'Trajet (€/h)', piges: 'Piges (€)', omnes: 'Omnes (€)', off: 'OFF (€)' };
-                document.getElementById('settings-list').innerHTML = Object.keys(settings).map(k => `
-                    <div class="flex justify-between items-center"><label class="text-[10px] uppercase font-bold text-slate-400">${labels[k]}</label><input type="number" id="price-${k}" value="${settings[k]}" class="input-field w-24 text-right"></div>
-                `).join('');
+        document.getElementById('t-p').innerText = totP.toFixed(2) + " €";
+        document.getElementById('t-b').innerText = totB.toFixed(2) + " €";
+    }
+
+    function toggleB(p) {
+        if(billed.includes(p)) billed = billed.filter(x => x !== p);
+        else billed.push(p);
+        localStorage.setItem('protrack_billed', JSON.stringify(billed));
+        render();
+    }
+
+    function toggleA(p) {
+        if(archived.includes(p)) archived = archived.filter(x => x !== p);
+        else archived.push(p);
+        localStorage.setItem('protrack_archived', JSON.stringify(archived));
+        render();
+    }
+
+    function copy(mode) {
+        let txt = "RECAP PROTRACK\n\n";
+        db.forEach(l => {
+            let isA = archived.includes(l.project);
+            if((mode === 'archive' && isA) || (mode === 'bilan' && !isA)) {
+                txt += `${l.date} | ${l.project} | ${l.type} | ${l.val.toFixed(2)}€\n`;
             }
-        }
+        });
+        navigator.clipboard.writeText(txt).then(() => alert("Copié !"));
+    }
 
-        function saveSettings() {
-            Object.keys(settings).forEach(k => settings[k] = parseFloat(document.getElementById(`price-${k}`).value));
-            localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); 
-            toggleSettings(false); 
-            render();
-        }
+    render();
+    // Update nav active state on scroll
+    document.getElementById('vp').addEventListener('scroll', () => {
+        let i = Math.round(document.getElementById('vp').scrollLeft / window.innerWidth);
+        document.querySelectorAll('.nav-item').forEach((n, idx) => {
+            n.classList.toggle('active', i === idx);
+        });
+    });
+</script>
 
-        function addEntry() {
-            console.log("Tentative d'enregistrement...");
-            const date = document.getElementById('date').value;
-            const project = document.getElementById('project').value || "DIVERS";
-            const type = document.getElementById('type').value;
-            
-            if(!date) return alert("Date manquante");
-
-            let val = 0;
-            let detail = "";
-            const m = (ts) => { if(!ts) return null; const [h, mi] = ts.split(':'); return parseInt(h)*60 + parseInt(mi); };
-
-            if (type.includes('Pose') || type === 'Jours OFF') {
-                val = settings[type === 'Pose Piges' ? 'piges' : (type === 'Pose Omnes' ? 'omnes' : 'off')]; 
-                detail = "FORFAIT";
-            } else {
-                const ms1 = m(document.getElementById('start1').value);
-                const me1 = m(document.getElementById('end1').value);
-                const ms2 = m(document.getElementById('start2').value);
-                const me2 = m(document.getElementById('end2').value);
-                
-                let t = 0;
-                if(ms1 !== null && me2 !== null && me1 === null && ms2 === null) {
-                    t = me2 - ms1; 
-                    detail = `${document.getElementById('start1').value} > ${document.getElementById('end2').value}`;
-                } else {
-                    t = ((ms1!==null && me1!==null) ? (me1-ms1) : 0) + ((ms2!==null && me2!==null) ? (me2-ms2) : 0);
-                    detail = (document.getElementById('start1').value ? document.getElementById('start1').value + '-' + document.getElementById('end1').value : "") + 
-                             (document.getElementById('start2').value ? " / " + document.getElementById('start2').value + '-' + document.getElementById('end2').value : "");
-                }
-                
-                if(t <= 0) return alert("Vérifie les horaires");
-                val = (t/60) * (type === 'Production' ? settings.prod : settings.trajet);
-                detail += ` (${Math.floor(t/60)}h${(t%60).toString().padStart(2,'0')})`;
-            }
-
-            const logs = JSON.parse(localStorage.getItem(DATA_KEY) || '[]');
-            logs.unshift({ id: Date.now(), date, project: project.toUpperCase(), type, val, detail });
-            localStorage.setItem(DATA_KEY, JSON.stringify(logs));
-            
-            // Reset
-            document.getElementById('project').value = "";
-            ['start1','end1','start2','end2'].forEach(id => document.getElementById(id).value = "");
-            
-            render();
-            alert("Enregistré avec succès !");
-        }
-
-        function render() {
-            const logs = JSON.parse(localStorage.getItem(DATA_KEY) || '[]');
-            const statusList = JSON.parse(localStorage.getItem(STATUS_KEY) || '[]');
-            const archiveList = JSON.parse(localStorage.getItem(ARCHIVE_KEY) || '[]');
-
-            // Autocomplétion
-            document.getElementById('project-list').innerHTML = [...new Set(logs.map(l => l.project))].map(p => `<option value="${p}">`).join('');
-
-            // Accueil
-            document.getElementById('recent-logs').innerHTML = logs.slice(0, 5).map(l => `
-                <div class="glass-card p-4 flex justify-between items-center border-l-4 ${l.type.includes('Pose') ? 'border-amber-500' : 'border-blue-500'}">
-                    <div class="text-[10px]"><p class="text-[7px] text-slate-500 font-bold">${l.date.split('-').reverse().join('/')}</p><h4 class="font-bold text-slate-100">${l.project}</h4><p class="text-[8px] text-blue-400 italic">${l.detail}</p></div>
-                    <p class="font-black text-lg tracking-tighter">${l.val.toFixed(2)}€</p>
-                </div>`).join('');
-
-            const grouped = logs.reduce((acc, log) => { (acc[log.project] = acc[log.project] || []).push(log); return acc; }, {});
-            let hAct = "", hArc = "", tP = 0, tB = 0;
-
-            for (const proj in grouped) {
-                const isB = statusList.includes(proj), isA = archiveList.includes(proj);
-                const pT = grouped[proj].reduce((s, l) => s + l.val, 0);
-                if(!isA) isB ? tB += pT : tP += pT;
-
-                let rows = grouped[proj].map(l => `
-                    <div class="flex justify-between items-center py-3 border-b border-white/5 last:border-0 text-[10px]">
-                        <div><span class="text-slate-300 font-bold">${l.date.split('-').reverse().join('/')}</span><br><span class="text-[7px] text-blue-400 font-bold uppercase">${l.type}</span></div>
-                        <div class="text-[8px] text-slate-500 italic flex-grow px-2 text-center">${l.detail}</div>
-                        <div class="flex items-center gap-3"><span class="font-bold">${l.val.toFixed(2)}€</span><span onclick="deleteItem(${l.id})" class="text-xs">🗑️</span></div>
-                    </div>`).join('');
-
-                const card = `
-                <div class="glass-card mb-4 overflow-hidden ${isB && !isA ? 'facture-true' : ''}">
-                    <div class="p-4 bg-white/5 flex justify-between items-center">
-                        <h3 class="font-bold text-[10px] uppercase">${proj}</h3>
-                        <div class="flex gap-2">
-                            <button onclick="toggleFacture('${proj.replace(/'/g, "\\'")}')" class="text-[7px] font-bold px-2 py-2 rounded bg-slate-700 uppercase">${isB ? 'Réouvrir
+</body>
+</html>
