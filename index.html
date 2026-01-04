@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ProTrack V52</title>
+    <title>ProTrack V53</title>
     <style>
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { 
             background: #0f172a; color: white; font-family: sans-serif; 
-            margin: 0; padding-bottom: 90px;
+            margin: 0; padding-bottom: 100px; overflow-y: auto;
         }
         .page { display: none; padding: 15px; }
         #pg0 { display: block; } 
@@ -16,7 +16,7 @@
         .input { background: #0f172a; border: 1px solid #475569; color: white; border-radius: 6px; padding: 12px; width: 100%; font-size: 16px; margin-bottom: 10px; display: block; }
         .btn { background: #2563eb; color: white; padding: 15px; border-radius: 10px; font-weight: bold; width: 100%; border: none; font-size: 16px; }
         .btn-sec { background: #334155; padding: 10px; font-size: 11px; color: white; border-radius: 5px; text-align: center; text-transform: uppercase; font-weight: bold; }
-        .nav { position: fixed; bottom: 0; width: 100%; height: 70px; background: #1e293b; display: flex; border-top: 1px solid #475569; }
+        .nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: #1e293b; display: flex; border-top: 1px solid #475569; z-index: 999; }
         .nav-item { flex: 1; color: #64748b; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px; }
         .nav-item.active { color: #3b82f6; border-top: 3px solid #3b82f6; background: rgba(59, 130, 246, 0.1); }
         .label { font-size: 11px; color: #94a3b8; margin-bottom: 5px; display: block; text-transform: uppercase; }
@@ -35,7 +35,7 @@
     </div>
 
     <div id="pg0" class="page">
-        <div onclick="openSet()" style="font-size:25px; margin-bottom:15px;">⚙️ Paramètres</div>
+        <div onclick="openSet()" style="font-size:25px; margin-bottom:15px; cursor:pointer;">⚙️ Paramètres</div>
         <div class="card">
             <div class="grid">
                 <input type="date" id="in-date" class="input">
@@ -61,7 +61,11 @@
             </div>
             <button class="btn" onclick="saveData()">ENREGISTRER</button>
         </div>
+        
+        <div class="label" style="margin-top:20px;">Dernières saisies détaillées :</div>
         <div id="recent-list"></div>
+        
+        <div style="height:200px; border: 1px dashed #334155; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#334155; font-size:10px; margin-top:20px;">ESPACE TEST SCROLL</div>
     </div>
 
     <div id="pg1" class="page">
@@ -95,6 +99,7 @@
             document.getElementById('nv0').classList.toggle('active', n === 0);
             document.getElementById('nv1').classList.toggle('active', n === 1);
             document.getElementById('nv2').classList.toggle('active', n === 2);
+            window.scrollTo(0,0);
             render();
         }
 
@@ -115,7 +120,6 @@
                 hStr = "FORFAIT";
             } else {
                 let totalMin = 0;
-                // Cas journée continue (S1 et E2 remplis uniquement)
                 if (s1 > 0 && e2 > 0 && e1 === 0 && s2 === 0) {
                     totalMin = e2 - s1;
                     hStr = document.getElementById('s1').value + "-" + document.getElementById('e2').value;
@@ -137,11 +141,22 @@
         }
 
         function render() {
-            // Auto-complétion
             const projs = [...new Set(db.map(x => x.p))];
             document.getElementById('plist').innerHTML = projs.map(p => `<option value="${p}">`).join('');
 
-            document.getElementById('recent-list').innerHTML = db.slice(0, 2).map(o => `<div class="card" style="font-size:12px; border-left:4px solid #3b82f6;"><b>${o.p}</b> - ${o.val.toFixed(2)}€</div>`).join('');
+            // Mise à jour de la liste RECENTE avec détails complets
+            document.getElementById('recent-list').innerHTML = db.slice(0, 3).map(o => `
+                <div class="card" style="border-left:4px solid #3b82f6; padding:10px;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                        <b style="font-size:13px;">${o.p}</b>
+                        <b style="color:#60a5fa; font-size:13px;">${o.val.toFixed(2)}€</b>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:11px; color:#94a3b8;">
+                        <span>${o.d.split('-').reverse().join('/')}</span>
+                        <span>${o.hStr} ${o.dur > 0 ? `<b style="color:#3b82f6;">(${o.dur.toFixed(2)}h)</b>` : ''}</span>
+                    </div>
+                </div>
+            `).join('');
             
             let groups = db.reduce((acc, o) => { (acc[o.p] = acc[o.p] || []).push(o); return acc; }, {});
             let hB = "", hA = "", tAF = 0, tF = 0;
@@ -160,7 +175,7 @@
                         </div>
                         <div style="width:80px; text-align:right;">
                             <b style="font-size:12px;">${o.val.toFixed(2)}€</b>
-                            <span onclick="delItem(${o.id})" style="margin-left:8px;">🗑️</span>
+                            <span onclick="delItem(${o.id})" style="margin-left:8px; cursor:pointer;">🗑️</span>
                         </div>
                     </div>`).join('');
                 
@@ -169,7 +184,7 @@
                     ${rows}
                     <div class="grid" style="margin-top:10px;">
                         ${isA ? `<div class="btn-sec" onclick="toggleArch('${proj}')">Réactiver</div>` : 
-                        `<div class="btn-sec" onclick="toggleBill('${proj}')">${isB?'À FACTURER':'FACTURÉ'}</div>
+                        `<div class="btn-sec" onclick="toggleBill('${proj}')" style="background:${isB?'#1e293b':'#334155'}">${isB?'À FACTURER':'FACTURÉ'}</div>
                          <div class="btn-sec" onclick="toggleArch('${proj}')" style="color:#60a5fa">ARCHIVER</div>`}
                     </div>
                 </div>`;
