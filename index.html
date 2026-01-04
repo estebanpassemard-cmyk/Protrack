@@ -39,13 +39,13 @@
 
             <div id="section-hours" class="space-y-4 pt-2">
                 <div class="grid grid-cols-2 gap-2">
-                    <div class="text-[9px] uppercase font-bold text-slate-500 pl-1 italic">Session 1 (Matin)</div>
+                    <div class="text-[9px] uppercase font-bold text-slate-500 pl-1 italic">Matin</div>
                     <div class="text-[9px] uppercase font-bold text-slate-500 pl-1 italic">Fin</div>
                     <input type="time" id="start1" class="input-field">
                     <input type="time" id="end1" class="input-field">
                 </div>
                 <div class="grid grid-cols-2 gap-2">
-                    <div class="text-[9px] uppercase font-bold text-slate-500 pl-1 italic">Session 2 (Reprise)</div>
+                    <div class="text-[9px] uppercase font-bold text-slate-500 pl-1 italic">Après-midi</div>
                     <div class="text-[9px] uppercase font-bold text-slate-500 pl-1 italic">Fin</div>
                     <input type="time" id="start2" class="input-field">
                     <input type="time" id="end2" class="input-field">
@@ -59,7 +59,7 @@
     <h3 class="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-4 ml-1 italic">Dernières activités</h3>
     <div id="recent-logs" class="space-y-3"></div>
 
-    <div id="modal" class="hidden fixed inset-0 bg-black/95 z-50 flex flex-col animate-fade">
+    <div id="modal" class="hidden fixed inset-0 bg-black/95 z-50 flex flex-col">
         <div class="p-5 flex justify-between items-center border-b border-white/5">
             <h2 class="font-bold text-sm uppercase italic tracking-widest">Récapitulatif</h2>
             <button onclick="toggleModal(false)" class="p-2 text-xl">✕</button>
@@ -69,19 +69,19 @@
             <div class="grid grid-cols-2 gap-3 mb-8">
                 <div class="bg-blue-600/10 p-4 rounded-xl border border-blue-500/20">
                     <p class="text-[8px] font-bold text-blue-400 uppercase mb-1 italic">À Facturer</p>
-                    <p id="total-pending" class="text-xl font-black text-blue-400 tracking-tighter">0.00 €</p>
+                    <p id="total-pending" class="text-xl font-black text-blue-400">0.00 €</p>
                 </div>
                 <div class="bg-red-600/10 p-4 rounded-xl border border-red-500/20">
                     <p class="text-[8px] font-bold text-red-400 uppercase mb-1 italic">Encaissé</p>
-                    <p id="total-billed" class="text-xl font-black text-red-400 tracking-tighter">0.00 €</p>
+                    <p id="total-billed" class="text-xl font-black text-red-400">0.00 €</p>
                 </div>
             </div>
             <div id="tableContainer" class="space-y-6"></div>
         </div>
 
         <div class="p-4 border-t border-white/10 bg-slate-900 grid grid-cols-2 gap-2">
-            <button onclick="copyToClipboard()" class="bg-white/5 text-white py-4 rounded-xl text-[9px] font-bold uppercase tracking-widest">Copier Notes</button>
-            <button onclick="exportCSV()" class="bg-emerald-800 text-white py-4 rounded-xl text-[9px] font-bold uppercase tracking-widest">Excel</button>
+            <button onclick="copyToClipboard()" class="bg-white/5 text-white py-4 rounded-xl text-[9px] font-bold uppercase">Copier Notes</button>
+            <button onclick="exportCSV()" class="bg-emerald-800 text-white py-4 rounded-xl text-[9px] font-bold uppercase">Excel</button>
         </div>
     </div>
 
@@ -90,108 +90,9 @@
             <h2 class="text-center font-bold mb-8 uppercase text-sm tracking-widest italic">Tarification</h2>
             <div class="space-y-5" id="settings-list"></div>
             <button onclick="saveSettings()" class="w-full btn-primary text-white py-4 rounded-xl font-bold mt-8 uppercase text-xs">Mettre à jour</button>
-            <button onclick="toggleSettings(false)" class="w-full text-slate-600 text-[10px] mt-4 font-bold uppercase tracking-widest">Annuler</button>
+            <button onclick="toggleSettings(false)" class="w-full text-slate-600 text-[10px] mt-4 font-bold uppercase">Annuler</button>
         </div>
     </div>
 
     <script>
-        let settings = JSON.parse(localStorage.getItem('pro_settings_v17')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
-        document.getElementById('date').valueAsDate = new Date();
-
-        function formatDate(iso) { const [y, m, d] = iso.split('-'); return `${d}/${m}/${y}`; }
-
-        function toggleInputs() {
-            const t = document.getElementById('type').value;
-            document.getElementById('section-hours').style.display = (t.includes('Pose') || t === 'Jours OFF') ? 'none' : 'block';
-        }
-
-        function toggleSettings(s) { 
-            document.getElementById('settings-modal').classList.toggle('hidden', !s); 
-            if(s) {
-                const labels = { prod: 'Prod (€/h)', trajet: 'Trajet (€/h)', piges: 'Piges (Forfait)', omnes: 'Omnes (Forfait)', off: 'OFF (Jour)' };
-                document.getElementById('settings-list').innerHTML = Object.keys(settings).map(k => `
-                    <div class="flex justify-between items-center"><label class="text-[10px] uppercase font-bold text-slate-400">${labels[k]}</label><input type="number" id="price-${k}" value="${settings[k]}" class="input-field w-24 text-right"></div>
-                `).join('');
-            }
-        }
-
-        function saveSettings() { 
-            Object.keys(settings).forEach(k => settings[k] = parseFloat(document.getElementById(`price-${k}`).value));
-            localStorage.setItem('pro_settings_v17', JSON.stringify(settings)); toggleSettings(false); render(); 
-        }
-
-        function addEntry() {
-            const date = document.getElementById('date').value, project = document.getElementById('project').value || "DIVERS", type = document.getElementById('type').value;
-            let val = 0, detail = "";
-            if (type.includes('Pose') || type === 'Jours OFF') { 
-                val = type === 'Pose Piges' ? settings.piges : (type === 'Pose Omnes' ? settings.omnes : settings.off); detail = "FORFAIT"; 
-            } else {
-                const s1 = document.getElementById('start1').value, e1 = document.getElementById('end1').value, s2 = document.getElementById('start2').value, e2 = document.getElementById('end2').value;
-                if(!s1 || !e1) return alert("Session 1 manquante");
-                const d1 = (parseInt(e1.split(':')[0])*60 + parseInt(e1.split(':')[1])) - (parseInt(s1.split(':')[0])*60 + parseInt(s1.split(':')[1]));
-                const d2 = (s2 && e2) ? (parseInt(e2.split(':')[0])*60 + parseInt(e2.split(':')[1])) - (parseInt(s2.split(':')[0])*60 + parseInt(s2.split(':')[1])) : 0;
-                val = ((d1 + d2) / 60) * (type === 'Production' ? settings.prod : settings.trajet);
-                detail = `${s1}-${e1}${s2 ? ' / ' + s2 + '-' + e2 : ''}`;
-            }
-            let logs = JSON.parse(localStorage.getItem('pro_data_v17') || '[]');
-            logs.unshift({ id: Date.now(), date, project: project.toUpperCase(), type, val, detail });
-            localStorage.setItem('pro_data_v17', JSON.stringify(logs)); render();
-            ['project','start1','end1','start2','end2'].forEach(id => document.getElementById(id).value = "");
-        }
-
-        function render() {
-            const logs = JSON.parse(localStorage.getItem('pro_data_v17') || '[]');
-            const billedList = JSON.parse(localStorage.getItem('billed_v17') || '[]');
-            document.getElementById('project-list').innerHTML = [...new Set(logs.map(l => l.project))].map(p => `<option value="${p}">`).join('');
-
-            document.getElementById('recent-logs').innerHTML = logs.slice(0, 5).map(l => `
-                <div class="glass-card p-4 flex justify-between items-center border-l-4 ${l.type === 'Production' ? 'border-blue-500' : 'border-indigo-500'}">
-                    <div>
-                        <p class="text-[8px] font-bold text-slate-500 uppercase">${formatDate(l.date)}</p>
-                        <h4 class="font-bold text-sm text-slate-100">${l.project}</h4>
-                        <p class="text-[9px] text-blue-400 font-bold italic">${l.detail}</p>
-                    </div>
-                    <p class="font-black text-lg tracking-tighter">${l.val.toFixed(2)}€</p>
-                </div>
-            `).join('');
-
-            const grouped = logs.reduce((acc, log) => { (acc[log.project] = acc[log.project] || []).push(log); return acc; }, {});
-            let html = "", tP = 0, tB = 0;
-            for (const proj in grouped) {
-                const isB = billedList.includes(proj);
-                let pT = grouped[proj].reduce((s, l) => s + l.val, 0);
-                isB ? tB += pT : tP += pT;
-                let rows = grouped[proj].map(l => `
-                    <div class="flex justify-between items-center py-4 border-b border-white/5 last:border-0">
-                        <div class="text-[10px]"><span class="font-bold text-slate-300">${formatDate(l.date)}</span><br><span class="text-blue-400 text-[8px] uppercase font-bold">${l.type}</span></div>
-                        <div class="text-[9px] text-slate-500 italic">${l.detail}</div>
-                        <div class="flex items-center gap-4"><span class="font-bold text-sm">${l.val.toFixed(2)}€</span><span onclick="deleteItem(${l.id})" class="text-xs p-2">🗑️</span></div>
-                    </div>`).join('');
-                html += `
-                <div class="glass-card overflow-hidden ${isB ? 'facture-true' : ''}">
-                    <div class="p-4 bg-white/5 flex justify-between items-center">
-                        <h3 class="font-bold text-[10px] uppercase tracking-wider">${proj}</h3>
-                        <button onclick="toggleFacture('${proj.replace(/'/g, "\\'")}')" class="text-[8px] font-bold px-3 py-2 rounded bg-slate-700 uppercase">${isB ? 'Réactiver' : 'Archiver'}</button>
-                    </div>
-                    <div class="px-4 pb-2">${rows}</div>
-                </div>`;
-            }
-            document.getElementById('tableContainer').innerHTML = html || "<p class='text-center text-[10px] text-slate-700 uppercase py-10'>Aucune donnée</p>";
-            document.getElementById('total-pending').innerText = tP.toFixed(2) + " €";
-            document.getElementById('total-billed').innerText = tB.toFixed(2) + " €";
-        }
-
-        function toggleFacture(proj) { let b = JSON.parse(localStorage.getItem('billed_v17') || '[]'); b.includes(proj) ? b = b.filter(p => p !== proj) : b.push(proj); localStorage.setItem('billed_v17', JSON.stringify(b)); render(); }
-        function deleteItem(id) { if(confirm("Supprimer ?")) { let l = JSON.parse(localStorage.getItem('pro_data_v17') || '[]'); l = l.filter(i => i.id !== id); localStorage.setItem('pro_data_v17', JSON.stringify(l)); render(); } }
-        function toggleModal(s) { document.getElementById('modal').classList.toggle('hidden', !s); if(s) render(); }
-        function exportCSV() { const logs = JSON.parse(localStorage.getItem('pro_data_v17') || '[]'); let csv = "Date;Projet;Activite;Duree;Montant\n"; logs.forEach(l => csv += `${formatDate(l.date)};${l.project};${l.type};${l.detail};${l.val.toFixed(2)}\n`); const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'})); link.download = "ProTrack_Mobile.csv"; link.click(); }
-        function copyToClipboard() { 
-            const logs = JSON.parse(localStorage.getItem('pro_data_v17') || '[]'); 
-            let t = "EXPORT PROTRACK\n\n"; 
-            logs.forEach(l => t += `${formatDate(l.date)} | ${l.project} | ${l.val.toFixed(2)}€\n`); 
-            navigator.clipboard.writeText(t).then(() => alert("Copié dans le presse-papier !")); 
-        }
-        render(); toggleInputs();
-    </script>
-</body>
-</html>
+        let settings = JSON.parse(localStorage.getItem('pro_settings_v18')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 10
