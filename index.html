@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrack V50</title>
+    <title>ProTrack V51</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         
-        /* Suppression du blocage fixed pour permettre le scroll */
-        body { 
+        /* Correction du Scroll : On laisse le body défiler normalement */
+        html, body { 
             background: #0f172a; color: white; font-family: -apple-system, sans-serif; 
-            margin: 0; padding-bottom: 100px; /* Espace pour la nav */
-            overflow-y: auto; -webkit-overflow-scrolling: touch;
+            margin: 0; padding: 0; min-height: 100vh; width: 100%;
         }
         
-        .page { display: none; padding: 20px; width: 100%; }
+        /* Conteneur de page avec espace pour la nav */
+        .page { display: none; padding: 20px; padding-bottom: 100px; width: 100%; }
         #pg0 { display: block; } 
 
         .card { background: #1e293b; border-radius: 12px; padding: 15px; margin-bottom: 15px; border: 1px solid #334155; }
@@ -23,8 +23,9 @@
         .btn { background: #2563eb; color: white; padding: 18px; border-radius: 12px; font-weight: 800; width: 100%; text-align: center; text-transform: uppercase; border: none; }
         .btn-sec { background: #334155; padding: 10px; font-size: 11px; color: white; border-radius: 6px; text-align: center; font-weight: bold; text-transform: uppercase; }
 
-        .nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 80px; background: #1e293b; display: flex; border-top: 1px solid #475569; z-index: 1000; }
-        .nav-item { flex: 1; color: #64748b; display: flex; align-items: center; justify-content: center; font-weight: 800; text-transform: uppercase; font-size: 12px; }
+        /* Navigation Fixe identique à la V45 qui fonctionnait */
+        .nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 80px; background: #1e293b; display: flex; border-top: 1px solid #475569; z-index: 9999; }
+        .nav-item { flex: 1; color: #64748b; display: flex; align-items: center; justify-content: center; font-weight: 800; text-transform: uppercase; font-size: 12px; height: 100%; }
         .nav-item.active { color: #3b82f6; background: rgba(59, 130, 246, 0.1); border-top: 4px solid #3b82f6; }
 
         .label { font-size: 10px; color: #94a3b8; text-transform: uppercase; font-weight: 800; margin-bottom: 4px; display: block; }
@@ -39,13 +40,13 @@
 <body>
 
     <div class="nav">
-        <div id="nv0" class="nav-item active" onclick="goto(0)">Saisie</div>
-        <div id="nv1" class="nav-item" onclick="goto(1)">Bilan</div>
-        <div id="nv2" class="nav-item" onclick="goto(2)">Archives</div>
+        <div id="nv0" class="nav-item active" onclick="goto(event, 0)">Saisie</div>
+        <div id="nv1" class="nav-item" onclick="goto(event, 1)">Bilan</div>
+        <div id="nv2" class="nav-item" onclick="goto(event, 2)">Archives</div>
     </div>
 
     <div id="pg0" class="page">
-        <div onclick="openSet()" style="font-size:32px; margin-bottom:20px; width:60px; cursor:pointer;">⚙️</div>
+        <div onclick="openSet(event)" style="font-size:32px; margin-bottom:20px; width:60px; cursor:pointer;">⚙️</div>
         
         <div class="card">
             <div class="grid-2">
@@ -74,7 +75,7 @@
                 <input type="time" id="e2" class="input">
             </div>
 
-            <button class="btn" onclick="saveData()">ENREGISTRER</button>
+            <button class="btn" onclick="saveData(event)">ENREGISTRER</button>
         </div>
 
         <div style="font-size:11px; color:#64748b; text-transform:uppercase; margin:25px 0 10px 5px; font-weight:800;">Dernières saisies</div>
@@ -95,7 +96,7 @@
         <div class="card" style="width:100%;">
             <h3 style="text-align:center; margin-top:0;">Configuration</h3>
             <div id="price-inputs"></div>
-            <button class="btn" onclick="closeSet()" style="margin-top:20px;">VALIDER</button>
+            <button class="btn" onclick="closeSet(event)" style="margin-top:20px;">VALIDER</button>
         </div>
     </div>
 
@@ -107,17 +108,21 @@
 
         const $ = (id) => document.getElementById(id);
 
-        function goto(n) {
+        // NAVIGATION MOTEUR V45 (Rétabli)
+        window.goto = function(e, n) {
+            if(e) e.stopPropagation();
             window.scrollTo(0,0);
-            $(`pg0`).style.display = n === 0 ? 'block' : 'none';
-            $(`pg1`).style.display = n === 1 ? 'block' : 'none';
-            $(`pg2`).style.display = n === 2 ? 'block' : 'none';
-            for(let i=0; i<3; i++) $(`nv${i}`).classList.remove('active');
+            for(let i=0; i<3; i++) {
+                $(`pg${i}`).style.setProperty('display', 'none', 'important');
+                $(`nv${i}`).classList.remove('active');
+            }
+            $(`pg${n}`).style.setProperty('display', 'block', 'important');
             $(`nv${n}`).classList.add('active');
             render();
-        }
+        };
 
-        function saveData() {
+        window.saveData = function(e) {
+            if(e) e.stopPropagation();
             const d = $('in-date').value;
             const p = $('in-proj').value.toUpperCase() || "DIVERS";
             const t = $('in-type').value;
@@ -133,11 +138,9 @@
                 hStr = "FORFAIT";
             } else {
                 let totalMin = 0;
-                // Calcul intelligent : matin + après-midi si les deux existent, ou juste l'un des deux
                 let mDur = (ms !== null && me !== null) ? (me - ms) : 0;
                 let aDur = (as !== null && ae !== null) ? (ae - as) : 0;
                 
-                // Cas spécial journée continue (Début Matin -> Fin Aprem sans cases intermédiaires)
                 if (ms !== null && ae !== null && me === null && as === null) {
                     totalMin = ae - ms;
                     hStr = $('s1').value + " - " + $('e2').value;
@@ -148,11 +151,67 @@
                     hStr = (p1 && p2) ? p1 + " / " + p2 : (p1 || p2);
                 }
                 
-                if(totalMin <= 0) return alert("Vérifiez les heures saisies");
+                if(totalMin <= 0) return alert("Vérifiez les heures");
                 durH = totalMin / 60;
                 val = durH * (t === 'Production' ? rates.prod : rates.trajet);
             }
 
             db.unshift({ id: Date.now(), d, p, t, val, hStr, durH });
             localStorage.setItem('PT44_DATA', JSON.stringify(db));
-            alert("
+            alert("Enregistré !");
+            ['in-proj','s1','e1','s2','e2'].forEach(id => $(id).value = "");
+            render();
+        };
+
+        function render() {
+            const projs = [...new Set(db.map(x => x.p))];
+            $('plist').innerHTML = projs.map(p => `<option value="${p}">`).join('');
+
+            $('recent-list').innerHTML = db.slice(0, 3).map(o => `
+                <div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-left:4px solid #3b82f6;">
+                    <div style="font-size:11px;"><b>${o.p}</b><br>${o.hStr}</div>
+                    <b style="color:#60a5fa;">${o.val.toFixed(2)}€</b>
+                </div>`).join('');
+            
+            let groups = db.reduce((acc, o) => { (acc[o.p] = acc[o.p] || []).push(o); return acc; }, {});
+            let hB = "", hA = "", tAF = 0, tF = 0;
+
+            for (let proj in groups) {
+                let isB = billed.includes(proj), isA = archived.includes(proj);
+                let totalVal = groups[proj].reduce((s, o) => s + o.val, 0);
+                if(!isA) { if(isB) tF += totalVal; else tAF += totalVal; }
+                
+                let rows = groups[proj].map(o => `
+                    <div class="row">
+                        <span style="color:#94a3b8; font-size:11px; width:70px;">${o.d.split('-').reverse().join('/')}</span>
+                        <div style="flex:1; text-align:center;">
+                            <span style="font-weight:bold; font-size:11px;">${o.hStr}</span>
+                            ${o.durH > 0 ? `<span class="hour-badge">${o.durH.toFixed(2)}h</span>` : ''}
+                        </div>
+                        <div style="width:85px; text-align:right;">
+                            <b style="font-size:12px;">${o.val.toFixed(2)}€</b>
+                            <span onclick="delItem(event, ${o.id})" style="margin-left:10px; font-size:18px;">🗑️</span>
+                        </div>
+                    </div>`).join('');
+                
+                let card = `<div class="card" style="border-left:${(!isA && isB) ? '6px solid #ef4444' : '1px solid #334155'}">
+                    <div style="display:flex; justify-content:space-between; font-weight:900; margin-bottom:10px;"><span>${proj}</span><span style="color:#3b82f6;">${totalVal.toFixed(2)}€</span></div>
+                    ${rows}
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:15px;">
+                        ${isA ? `<div class="btn-sec" onclick="toggleArch(event, '${proj.replace(/'/g,"\\'")}')">Réactiver</div>` : 
+                        `<div class="btn-sec" onclick="toggleBill(event, '${proj.replace(/'/g,"\\'")}')" style="background:${isB?'#1e293b':'#334155'}">${isB?'À FACTURER':'FACTURÉ'}</div>
+                         <div class="btn-sec" onclick="toggleArch(event, '${proj.replace(/'/g,"\\'")}')" style="color:#60a5fa">ARCHIVER</div>`}
+                    </div>
+                </div>`;
+                if(isA) hA += card; else hB += card;
+            }
+            $('list-bilan').innerHTML = hB || "Vide";
+            $('list-archive').innerHTML = hA || "Vide";
+            $('sum-af').innerText = tAF.toFixed(2) + " €";
+            $('sum-f').innerText = tF.toFixed(2) + " €";
+        }
+
+        window.delItem = function(e, id) { e.stopPropagation(); if(confirm("Supprimer ?")) { db = db.filter(x => x.id !== id); localStorage.setItem('PT44_DATA', JSON.stringify(db)); render(); } };
+        window.toggleBill = function(e, p) { e.stopPropagation(); billed.includes(p) ? billed = billed.filter(x => x!==p) : billed.push(p); localStorage.setItem('PT44_BILL', JSON.stringify(billed)); render(); };
+        window.toggleArch = function(e, p) { e.stopPropagation(); archived.includes(p) ? archived = archived.filter(x => x!==p) : archived.push(p); localStorage.setItem('PT44_ARCH', JSON.stringify(archived)); render(); };
+        window.openSet = function(e) { if(e) e.stopPropagation(); const labels = { prod:'Prod (€/h)', trajet:'Trajet (€/h)', piges:'Piges (€)', omnes:'Omnes (€)', off:'OFF (€)' }; $('price-inputs').innerHTML = Object.keys(rates).map
