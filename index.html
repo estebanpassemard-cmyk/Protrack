@@ -3,23 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrack Premium</title>
+    <title>ProTrack Premium Final</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background-color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif; color: #f8fafc; margin: 0; overflow: hidden; height: 100vh; }
-        
         .app-viewport { display: flex; width: 100vw; height: 100vh; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; }
         .app-viewport::-webkit-scrollbar { display: none; }
-        
         .page { flex: 0 0 100vw; width: 100vw; height: 100vh; scroll-snap-align: start; overflow-y: auto; padding: 20px 20px 120px 20px; }
-
         .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; }
         .input-field { background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 12px; padding: 12px; font-size: 16px !important; width: 100%; }
         .btn-primary { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
         .facture-true { border-left: 5px solid #ef4444 !important; opacity: 0.7; }
-
         .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 80px; background: rgba(15, 23, 42, 0.95); border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-around; align-items: center; z-index: 100; }
         .nav-item { font-size: 10px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 1px; }
         .nav-item.active { color: #3b82f6; }
@@ -28,7 +24,6 @@
 <body>
 
     <div class="app-viewport" id="vp">
-        
         <div class="page">
             <div class="flex justify-between items-center mb-6">
                 <button id="openSettings" class="w-10 h-10 glass-card flex items-center justify-center text-xs opacity-50">⚙️</button>
@@ -51,11 +46,9 @@
                     </select>
                     <div id="hour-inputs" class="space-y-4 pt-2">
                         <div class="grid grid-cols-2 gap-2 text-[9px] font-bold text-slate-500 italic uppercase">
-                            <span>Début</span><span>Fin</span>
-                            <input type="time" id="s1" class="input-field">
-                            <input type="time" id="e1" class="input-field">
-                            <input type="time" id="s2" class="input-field">
-                            <input type="time" id="e2" class="input-field">
+                            <span>Matin (Déb-Fin)</span><span>Aprem (Déb-Fin)</span>
+                            <div class="flex gap-1"><input type="time" id="s1" class="input-field px-1"><input type="time" id="e1" class="input-field px-1"></div>
+                            <div class="flex gap-1"><input type="time" id="s2" class="input-field px-1"><input type="time" id="e2" class="input-field px-1"></div>
                         </div>
                     </div>
                     <button id="saveBtn" class="w-full btn-primary py-4 rounded-xl font-black text-xs uppercase tracking-widest text-white shadow-xl">Enregistrer</button>
@@ -86,7 +79,6 @@
             <div id="list-archive" class="space-y-4"></div>
             <button id="copyArchive" class="w-full bg-white/5 text-white py-4 rounded-xl text-[9px] font-bold uppercase mt-8">Copier Archives</button>
         </div>
-
     </div>
 
     <nav class="nav-bar">
@@ -104,22 +96,19 @@
     </div>
 
     <script>
-        let db = JSON.parse(localStorage.getItem('PT_DB_V28') || '[]');
-        let billed = JSON.parse(localStorage.getItem('PT_B_V28') || '[]');
-        let archived = JSON.parse(localStorage.getItem('PT_A_V28') || '[]');
+        let db = JSON.parse(localStorage.getItem('PT_DB_V29') || '[]');
+        let billed = JSON.parse(localStorage.getItem('PT_B_V29') || '[]');
+        let archived = JSON.parse(localStorage.getItem('PT_A_V29') || '[]');
         let prices = JSON.parse(localStorage.getItem('PT_PRICES')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
 
         document.getElementById('date').valueAsDate = new Date();
-
         const vp = document.getElementById('vp');
         function jump(i) { vp.scrollTo({ left: i * window.innerWidth, behavior: 'smooth' }); }
-        
         vp.addEventListener('scroll', () => {
             const i = Math.round(vp.scrollLeft / window.innerWidth);
             document.querySelectorAll('.nav-item').forEach((el, idx) => el.classList.toggle('active', i === idx));
         });
 
-        // Gestion Réglages
         document.getElementById('openSettings').onclick = () => {
             const list = document.getElementById('prices-list');
             const labels = { prod: 'Prod (€/h)', trajet: 'Trajet (€/h)', piges: 'Piges (€)', omnes: 'Omnes (€)', off: 'OFF (€)' };
@@ -130,112 +119,4 @@
             document.getElementById('settingsModal').classList.remove('hidden');
         };
 
-        document.getElementById('closeSettings').onclick = () => {
-            Object.keys(prices).forEach(k => prices[k] = parseFloat(document.getElementById(`p-${k}`).value));
-            localStorage.setItem('PT_PRICES', JSON.stringify(prices));
-            document.getElementById('settingsModal').classList.add('hidden');
-            render();
-        };
-
-        // Sauvegarde (SANS ALERTE)
-        document.getElementById('saveBtn').onclick = () => {
-            const date = document.getElementById('date').value;
-            const project = document.getElementById('project').value.toUpperCase() || "DIVERS";
-            const type = document.getElementById('type').value;
-            if(!date) return;
-
-            let val = 0;
-            let info = "";
-            const toM = (id) => { const v = document.getElementById(id).value; if(!v) return null; const [h,m] = v.split(':'); return parseInt(h)*60 + parseInt(m); };
-
-            if(type.includes('Pose') || type === 'Jours OFF') {
-                val = type === 'Pose Piges' ? prices.piges : (type === 'Pose Omnes' ? prices.omnes : prices.off);
-                info = "FORFAIT";
-            } else {
-                let m1 = (toM('e1') - toM('s1')), m2 = (toM('e2') - toM('s2'));
-                let totalMin = (m1 > 0 ? m1 : 0) + (m2 > 0 ? m2 : 0);
-                if(totalMin <= 0) return;
-                val = (totalMin/60) * (type === 'Production' ? prices.prod : prices.trajet);
-                info = Math.floor(totalMin/60) + "h" + (totalMin%60).toString().padStart(2,'0');
-            }
-
-            db.unshift({ id: Date.now(), date, project, type, val, info });
-            localStorage.setItem('PT_DB_V28', JSON.stringify(db));
-            
-            // Animation visuelle de confirmation (vibre si dispo)
-            if(window.navigator.vibrate) window.navigator.vibrate(20);
-            document.getElementById('saveBtn').innerText = "ENREGISTRÉ ✓";
-            setTimeout(() => { document.getElementById('saveBtn').innerText = "ENREGISTRER"; }, 1500);
-
-            document.getElementById('project').value = "";
-            ['s1','e1','s2','e2'].forEach(id => document.getElementById(id).value = "");
-            render();
-        };
-
-        function render() {
-            const recent = document.getElementById('recent-logs');
-            const bList = document.getElementById('list-bilan');
-            const aList = document.getElementById('list-archive');
-            
-            document.getElementById('project-list').innerHTML = [...new Set(db.map(l => l.project))].map(p => `<option value="${p}">`).join('');
-
-            recent.innerHTML = db.slice(0, 4).map(l => `
-                <div class="glass-card p-4 flex justify-between items-center border-l-4 ${l.type === 'Production' ? 'border-blue-500' : 'border-amber-500'}">
-                    <div class="text-[10px]"><p class="text-[7px] text-slate-500 font-bold">${l.date.split('-').reverse().join('/')}</p><h4 class="font-bold text-slate-100">${l.project}</h4><p class="text-[8px] text-blue-400 italic">${l.info}</p></div>
-                    <p class="font-black text-lg tracking-tighter">${l.val.toFixed(2)}€</p>
-                </div>`).join('');
-
-            let groups = db.reduce((acc, l) => { (acc[l.project] = acc[l.project] || []).push(l); return acc; }, {});
-            let hB = "", hA = "", tP = 0, tF = 0;
-
-            for (let p in groups) {
-                let isB = billed.includes(p), isA = archived.includes(p);
-                let sum = groups[p].reduce((s, l) => s + l.val, 0);
-                if(!isA) { if(isB) tF += sum; else tP += sum; }
-
-                let rows = groups[p].map(l => `
-                    <div class="flex justify-between py-2 border-b border-white/5 last:border-0 text-[10px]">
-                        <span class="text-slate-400">${l.date.split('-').reverse().join('/')}</span>
-                        <span class="text-blue-400 font-bold">${l.info}</span>
-                        <div class="flex items-center gap-2"><span class="font-bold">${l.val.toFixed(2)}€</span><span onclick="del(${l.id})" class="text-[10px]">🗑️</span></div>
-                    </div>`).join('');
-
-                let card = `
-                <div class="glass-card mb-4 overflow-hidden ${isB && !isA ? 'facture-true' : ''}">
-                    <div class="p-4 bg-white/5 flex justify-between items-center">
-                        <h3 class="font-bold text-[10px] uppercase">${p}</h3>
-                        <div class="flex gap-2">
-                            <button onclick="cmd('b','${p.replace(/'/g,"\\'")}')" class="text-[8px] font-bold px-3 py-2 rounded bg-slate-700 uppercase">${isB ? 'Ouvrir' : 'Facturer'}</button>
-                            <button onclick="cmd('a','${p.replace(/'/g,"\\'")}')" class="text-[8px] font-bold px-3 py-2 rounded bg-slate-800 uppercase">${isA ? 'Sortir' : 'Archiver'}</button>
-                        </div>
-                    </div>
-                    <div class="px-4 pb-2">${rows}</div>
-                </div>`;
-                if(isA) hA += card; else hB += card;
-            }
-            bList.innerHTML = hB || "<p class='text-center py-10 opacity-20 text-[10px] font-black uppercase'>Bilan vide</p>";
-            aList.innerHTML = hA || "<p class='text-center py-10 opacity-20 text-[10px] font-black uppercase'>Archives vides</p>";
-            document.getElementById('total-p').innerText = tP.toFixed(2) + " €";
-            document.getElementById('total-b').innerText = tF.toFixed(2) + " €";
-        }
-
-        window.cmd = (type, p) => {
-            if(type === 'b') { billed.includes(p) ? billed = billed.filter(x => x !== p) : billed.push(p); localStorage.setItem('PT_B_V28', JSON.stringify(billed)); }
-            else { archived.includes(p) ? archived = archived.filter(x => x !== p) : archived.push(p); localStorage.setItem('PT_A_V28', JSON.stringify(archived)); }
-            render();
-        };
-
-        window.del = (id) => { if(confirm("Supprimer ?")) { db = db.filter(l => l.id !== id); localStorage.setItem('PT_DB_V28', JSON.stringify(db)); render(); } };
-
-        function copy(mode) {
-            let t = "RECAP " + mode.toUpperCase() + "\n\n";
-            db.forEach(l => { if((mode === 'archive' && archived.includes(l.project)) || (mode === 'bilan' && !archived.includes(l.project))) t += `${l.date} | ${l.project} | ${l.val.toFixed(2)}€\n`; });
-            navigator.clipboard.writeText(t).then(() => alert("Copié !"));
-        }
-        document.getElementById('copyBilan').onclick = () => copy('bilan');
-        document.getElementById('copyArchive').onclick = () => copy('archive');
-
-        render();
-    </script>
-</body>
-</html>
+        document.getElementById
