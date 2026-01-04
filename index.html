@@ -3,57 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ProTrack Premium</title>
+    <title>ProTrack v16.1 | Clean Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg: #05070a;
-            --card: #0c111a;
-            --accent: #06b6d4;
-            --accent-purple: #8b5cf6;
-        }
+        :root { --bg: #05070a; --card: #0c111a; --accent: #06b6d4; --accent-purple: #8b5cf6; }
         body { 
-            background-color: var(--bg); 
-            font-family: 'Space Grotesk', sans-serif; 
-            color: #e2e8f0;
+            background-color: var(--bg); font-family: 'Space Grotesk', sans-serif; color: #e2e8f0;
             background-image: radial-gradient(circle at 50% -20%, #1e293b 0%, transparent 50%);
+            min-height: 100vh;
         }
         .mono { font-family: 'JetBrains Mono', monospace; }
-        
-        /* Glassmorphism & Borders */
-        .bento-card { 
-            background: var(--card); 
-            border: 1px solid rgba(255,255,255,0.05); 
-            border-radius: 20px;
-            transition: all 0.3s ease;
-        }
-        .bento-card:hover { border-color: rgba(6, 182, 212, 0.3); }
-
-        .input-premium {
-            background: #111827;
-            border: 1px solid #1f2937;
-            color: white;
-            border-radius: 12px;
-            padding: 12px;
-            transition: all 0.2s;
-        }
-        .input-premium:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.1); }
-
-        .btn-glow {
-            background: linear-gradient(135deg, var(--accent), var(--accent-purple));
-            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.2);
-            transition: all 0.3s;
-        }
-        .btn-glow:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(6, 182, 212, 0.4); }
-
-        /* Status colors */
-        .border-prod { border-left: 4px solid var(--accent); }
-        .border-trajet { border-left: 4px solid #94a3b8; }
-        .border-pose { border-left: 4px solid var(--accent-purple); }
-        .border-off { border-left: 4px solid #f59e0b; }
-
-        /* Anim */
+        .bento-card { background: var(--card); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; transition: all 0.3s ease; }
+        .input-premium { background: #111827; border: 1px solid #1f2937; color: white; border-radius: 12px; padding: 12px; transition: all 0.2s; font-size: 14px; }
+        .input-premium:focus { border-color: var(--accent); outline: none; }
+        .btn-glow { background: linear-gradient(135deg, var(--accent), var(--accent-purple)); transition: all 0.3s; }
+        .facture-true { opacity: 0.3; filter: grayscale(1); }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade { animation: fadeIn 0.4s ease forwards; }
     </style>
@@ -61,204 +26,152 @@
 <body class="p-4 md:p-12">
 
     <div class="max-w-7xl mx-auto">
-        <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-16 gap-6">
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
             <div>
-                <h1 class="text-4xl font-bold tracking-tight bg-gradient-to-r from-cyan-400 to-violet-500 bg-clip-text text-transparent italic">
-                    PRO<span class="font-light">TRACK</span>
-                </h1>
-                <div class="flex items-center gap-2 mt-2">
-                    <span class="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></span>
-                    <span class="text-[10px] uppercase tracking-[0.4em] text-slate-500 font-bold">Système de gestion v15</span>
-                </div>
+                <h1 class="text-3xl font-black tracking-tighter bg-gradient-to-r from-cyan-400 to-violet-500 bg-clip-text text-transparent italic uppercase">PRO-TRACK</h1>
+                <p class="text-[9px] uppercase tracking-[0.4em] text-slate-500 font-black mt-1">Mobile Optimized v16.1</p>
             </div>
-            
-            <div class="flex items-center gap-4">
-                <div class="text-right mr-4 hidden md:block">
-                    <p class="text-[9px] text-slate-500 uppercase font-black tracking-widest">Aujourd'hui</p>
-                    <p id="current-date-display" class="text-sm font-bold text-slate-300 italic"></p>
-                </div>
-                <button onclick="toggleSettings(true)" class="p-4 bento-card hover:bg-slate-900 transition text-xl">⚙️</button>
-                <button onclick="toggleModal(true)" class="btn-glow px-8 py-4 rounded-2xl font-black text-white uppercase text-xs tracking-widest">Rapport Global</button>
+            <div class="flex items-center gap-3 w-full md:w-auto">
+                <button onclick="toggleSettings(true)" class="p-4 bento-card flex-1 md:flex-none">⚙️</button>
+                <button onclick="toggleModal(true)" class="btn-glow px-6 py-4 rounded-2xl font-black text-white uppercase text-[11px] tracking-widest flex-[2] md:flex-none">Rapports</button>
             </div>
         </header>
 
         <div class="grid lg:grid-cols-12 gap-8">
-            <div class="lg:col-span-4 space-y-6">
-                <div class="bento-card p-8 bg-gradient-to-br from-[#0c111a] to-[#111827]">
-                    <h2 class="text-xs font-black text-cyan-500 uppercase tracking-[0.3em] mb-8 italic">Nouvelle Entrée</h2>
-                    
-                    <div class="space-y-6">
-                        <div class="grid grid-cols-1 gap-4">
+            <div class="lg:col-span-4">
+                <div class="bento-card p-6 md:p-8 sticky top-8">
+                    <h2 class="text-[10px] font-black text-cyan-500 uppercase tracking-[0.3em] mb-6 italic">Saisie</h2>
+                    <div class="space-y-5">
+                        <div class="space-y-3">
                             <input type="date" id="date" class="input-premium w-full">
-                            <input type="text" id="project" list="project-list" class="input-premium w-full font-medium" placeholder="Projet (ex: Omnes Paris)">
+                            <input type="text" id="project" list="project-list" class="input-premium w-full font-bold uppercase" placeholder="PROJET">
+                            <datalist id="project-list"></datalist>
                         </div>
-
-                        <select id="type" onchange="toggleInputs()" class="input-premium w-full font-bold text-cyan-400">
-                            <option value="Production text-white">⚒️ Production</option>
-                            <option value="Trajet">🚗 Trajet</option>
-                            <option value="Pose Piges">📍 Pose Piges</option>
-                            <option value="Pose Omnes">📍 Pose Omnes</option>
-                            <option value="Jours OFF">🌴 Jours OFF</option>
+                        <select id="type" onchange="toggleInputs()" class="input-premium w-full font-black text-cyan-400 uppercase">
+                            <option value="Production">Production</option>
+                            <option value="Trajet">Trajet</option>
+                            <option value="Pose Piges">Pose Piges</option>
+                            <option value="Pose Omnes">Pose Omnes</option>
+                            <option value="Jours OFF">Jours OFF</option>
                         </select>
-
-                        <div id="section-hours" class="grid grid-cols-1 gap-6 p-4 rounded-2xl bg-black/20 border border-white/5">
-                            <div class="space-y-3">
-                                <p class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Session Matin</p>
-                                <div class="grid grid-cols-2 gap-3">
-                                    <input type="time" id="start1" class="input-premium">
-                                    <input type="time" id="end1" class="input-premium">
-                                </div>
+                        <div id="section-hours" class="space-y-5 p-4 rounded-2xl bg-black/40 border border-white/5">
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="space-y-1"><label class="text-[8px] font-bold text-slate-500 uppercase">Début Matin</label><input type="time" id="start1" class="input-premium w-full"></div>
+                                <div class="space-y-1"><label class="text-[8px] font-bold text-slate-500 uppercase">Fin Matin</label><input type="time" id="end1" class="input-premium w-full"></div>
                             </div>
-                            <div class="space-y-3">
-                                <p class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Session Après-midi</p>
-                                <div class="grid grid-cols-2 gap-3">
-                                    <input type="time" id="start2" class="input-premium">
-                                    <input type="time" id="end2" class="input-premium">
-                                </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="space-y-1"><label class="text-[8px] font-bold text-slate-500 uppercase">Reprise</label><input type="time" id="start2" class="input-premium w-full"></div>
+                                <div class="space-y-1"><label class="text-[8px] font-bold text-slate-500 uppercase">Fin Journée</label><input type="time" id="end2" class="input-premium w-full"></div>
                             </div>
                         </div>
-
-                        <button onclick="addEntry()" class="w-full btn-glow py-5 rounded-2xl font-black text-sm uppercase tracking-widest mt-4">Enregistrer</button>
+                        <button onclick="addEntry()" class="w-full btn-glow py-5 rounded-2xl font-black text-sm uppercase tracking-widest text-white shadow-xl">Enregistrer</button>
                     </div>
                 </div>
             </div>
 
             <div class="lg:col-span-8">
-                <div class="flex justify-between items-center mb-6 px-2">
-                    <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">Flux récent</h3>
-                    <span class="text-[10px] text-slate-600 font-bold uppercase">8 dernières entrées</span>
-                </div>
                 <div id="recent-logs" class="space-y-4"></div>
             </div>
         </div>
     </div>
 
-    <div id="modal" class="hidden fixed inset-0 bg-black/95 backdrop-blur-xl flex items-center justify-center p-0 md:p-8 z-50">
-        <div class="w-full max-w-6xl h-full flex flex-col animate-fade">
-            <div class="p-8 flex justify-between items-center">
-                <h2 class="text-3xl font-black italic tracking-tighter uppercase">Archives <span class="text-cyan-500">Financières</span></h2>
-                <button onclick="toggleModal(false)" class="w-12 h-12 bento-card flex items-center justify-center hover:bg-red-500/20 hover:text-red-500 transition">✕</button>
+    <div id="modal" class="hidden fixed inset-0 bg-black/98 backdrop-blur-2xl flex items-center justify-center z-50 overflow-hidden">
+        <div class="w-full max-w-6xl h-full md:h-[90vh] flex flex-col animate-fade">
+            <div class="p-6 md:p-8 flex justify-between items-center border-b border-white/5">
+                <h2 class="text-xl font-black italic uppercase tracking-tighter">Journal</h2>
+                <button onclick="toggleModal(false)" class="w-10 h-10 bento-card flex items-center justify-center">✕</button>
             </div>
-            
-            <div class="flex-grow overflow-y-auto px-8">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                    <div class="bento-card p-6 border-t-2 border-cyan-500/50">
-                        <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">Encours à facturer</p>
-                        <p id="total-pending" class="text-3xl font-bold mono text-cyan-400">0.00 €</p>
-                    </div>
-                    <div class="bento-card p-6 border-t-2 border-violet-500/50">
-                        <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">Déjà encaissé</p>
-                        <p id="total-billed" class="text-3xl font-bold mono text-violet-400">0.00 €</p>
-                    </div>
-                    <div class="bento-card p-6 border-t-2 border-emerald-500/50">
-                        <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">Total annuel (Généré)</p>
-                        <p id="total-annual" class="text-3xl font-bold mono text-emerald-400">0.00 €</p>
-                    </div>
+            <div class="flex-grow overflow-y-auto p-4 md:p-8">
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-8">
+                    <div class="bento-card p-4 border-t-2 border-cyan-500 text-center"><p class="text-[8px] font-black text-slate-500 uppercase">À Facturer</p><p id="total-pending" class="text-lg font-bold mono text-cyan-400">0.00 €</p></div>
+                    <div class="bento-card p-4 border-t-2 border-red-500 text-center"><p class="text-[8px] font-black text-slate-500 uppercase">Archives</p><p id="total-billed" class="text-lg font-bold mono text-red-400">0.00 €</p></div>
+                    <div class="bento-card p-4 border-t-2 border-white/20 text-center col-span-2 md:col-span-1"><p class="text-[8px] font-black text-slate-500 uppercase">Total Brut</p><p id="total-annual" class="text-lg font-bold mono text-white">0.00 €</p></div>
                 </div>
-
-                <div id="tableContainer" class="space-y-12 pb-24"></div>
+                <div id="tableContainer" class="space-y-8 pb-10"></div>
             </div>
-
-            <div class="p-8 bg-black/50 border-t border-white/5 flex flex-col md:flex-row gap-4">
-                <button onclick="copyToClipboard()" class="bg-white/5 hover:bg-white/10 text-white px-8 py-4 rounded-xl font-bold uppercase text-[10px] tracking-widest transition border border-white/10">📋 Copier Notes</button>
-                <button onclick="exportCSV()" class="bg-cyan-600/10 hover:bg-cyan-600/20 text-cyan-400 px-8 py-4 rounded-xl font-bold uppercase text-[10px] tracking-widest transition border border-cyan-500/20">📥 Export Excel</button>
-                <button onclick="clearLogs()" class="text-red-900 text-[9px] font-black uppercase tracking-widest ml-auto hover:text-red-500 transition">Réinitialiser le système</button>
+            <div class="p-6 bg-black/50 border-t border-white/5 flex flex-wrap gap-3">
+                <button onclick="copyToClipboard()" class="bg-white/5 px-6 py-3 rounded-xl font-bold uppercase text-[9px] tracking-widest flex-1 md:flex-none">Copier Notes</button>
+                <button onclick="exportCSV()" class="bg-cyan-500/10 text-cyan-400 px-6 py-3 rounded-xl font-bold uppercase text-[9px] tracking-widest flex-1 md:flex-none">Export CSV</button>
+                <button onclick="clearLogs()" class="text-slate-700 text-[9px] font-black uppercase ml-auto">Reset</button>
             </div>
         </div>
     </div>
 
-    <div id="settings-modal" class="hidden fixed inset-0 bg-black/98 backdrop-blur-2xl flex items-center justify-center p-6 z-[100]">
-        <div class="bento-card w-full max-w-sm p-10">
-            <h2 class="text-2xl font-black mb-10 text-center uppercase italic tracking-tighter">Configuration <span class="text-cyan-500">Tarifs</span></h2>
-            <div class="space-y-6" id="settings-list">
-                </div>
-            <button onclick="saveSettings()" class="w-full btn-glow text-white py-5 rounded-2xl font-black mt-10 uppercase text-xs tracking-widest">Mettre à jour le système</button>
-            <button onclick="toggleSettings(false)" class="w-full text-slate-600 text-[10px] font-bold uppercase mt-6 text-center tracking-[0.3em]">Retour au Dashboard</button>
+    <div id="settings-modal" class="hidden fixed inset-0 bg-black/98 flex items-center justify-center z-[100]">
+        <div class="bento-card w-full max-w-sm p-8 mx-4">
+            <h2 class="text-xl font-black mb-8 text-center uppercase italic text-cyan-500">Tarifs</h2>
+            <div id="settings-list" class="space-y-5"></div>
+            <button onclick="saveSettings()" class="w-full btn-glow text-white py-4 rounded-2xl font-black mt-8 uppercase text-xs">Sauvegarder</button>
+            <button onclick="toggleSettings(false)" class="w-full text-slate-600 text-[10px] font-bold uppercase mt-4 text-center">Fermer</button>
         </div>
     </div>
 
     <script>
-        let settings = JSON.parse(localStorage.getItem('pro_settings_v15')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
+        let settings = JSON.parse(localStorage.getItem('pro_settings_v16')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
         document.getElementById('date').valueAsDate = new Date();
-        document.getElementById('current-date-display').innerText = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
 
         function formatDate(iso) { const [y, m, d] = iso.split('-'); return `${d}/${m}/${y}`; }
 
         function toggleInputs() {
             const t = document.getElementById('type').value;
-            document.getElementById('section-hours').style.display = (t.includes('Pose') || t === 'Jours OFF') ? 'none' : 'grid';
+            document.getElementById('section-hours').style.display = (t.includes('Pose') || t === 'Jours OFF') ? 'none' : 'block';
         }
 
         function toggleSettings(s) { 
-            const modal = document.getElementById('settings-modal');
-            modal.classList.toggle('hidden', !s);
+            document.getElementById('settings-modal').classList.toggle('hidden', !s);
             if(s) {
                 const list = document.getElementById('settings-list');
-                const labels = { prod: 'Production (€/h)', trajet: 'Trajet (€/h)', piges: 'Forfait Piges (€)', omnes: 'Forfait Omnes (€)', off: 'Journée OFF (€)' };
-                list.innerHTML = Object.keys(settings).map(k => `
-                    <div class="flex justify-between items-center gap-4">
-                        <label class="text-[10px] font-black uppercase text-slate-500 tracking-widest">${labels[k]}</label>
-                        <input type="number" id="price-${k}" value="${settings[k]}" class="input-premium w-24 text-right font-bold mono text-cyan-400">
-                    </div>
-                `).join('');
+                const labels = { prod: 'Production (€/h)', trajet: 'Trajet (€/h)', piges: 'Piges (€)', omnes: 'Omnes (€)', off: 'OFF (€)' };
+                list.innerHTML = Object.keys(settings).map(k => `<div class="flex justify-between items-center"><label class="text-[9px] font-bold uppercase text-slate-500 italic">${labels[k]}</label><input type="number" id="price-${k}" value="${settings[k]}" class="input-premium w-20 text-right font-bold mono text-cyan-400"></div>`).join('');
             }
         }
 
         function saveSettings() { 
             Object.keys(settings).forEach(k => settings[k] = parseFloat(document.getElementById(`price-${k}`).value));
-            localStorage.setItem('pro_settings_v15', JSON.stringify(settings)); 
-            toggleSettings(false); render(); 
+            localStorage.setItem('pro_settings_v16', JSON.stringify(settings)); toggleSettings(false); render(); 
         }
 
         function addEntry() {
-            const date = document.getElementById('date').value, project = document.getElementById('project').value || "PROJET DIVERS", type = document.getElementById('type').value;
+            const date = document.getElementById('date').value, project = document.getElementById('project').value || "DIVERS", type = document.getElementById('type').value;
             let val = 0, detail = "";
 
             if (type.includes('Pose') || type === 'Jours OFF') { 
                 val = settings[type === 'Pose Piges' ? 'piges' : (type === 'Pose Omnes' ? 'omnes' : 'off')]; 
-                detail = "FORFAIT UNIQUE"; 
+                detail = "FORFAIT"; 
             } else {
-                const s1 = document.getElementById('start1').value, e1 = document.getElementById('end1').value;
-                const s2 = document.getElementById('start2').value, e2 = document.getElementById('end2').value;
-                if(!s1 || !e1) return alert("Session 1 manquante");
-                
+                const s1 = document.getElementById('start1').value, e1 = document.getElementById('end1').value, s2 = document.getElementById('start2').value, e2 = document.getElementById('end2').value;
+                if(!s1 || !e1) return alert("Saisir horaires !");
                 const d1 = (parseInt(e1.split(':')[0])*60 + parseInt(e1.split(':')[1])) - (parseInt(s1.split(':')[0])*60 + parseInt(s1.split(':')[1]));
                 const d2 = (s2 && e2) ? (parseInt(e2.split(':')[0])*60 + parseInt(e2.split(':')[1])) - (parseInt(s2.split(':')[0])*60 + parseInt(s2.split(':')[1])) : 0;
-                const total = d1 + d2;
-                
-                val = (total / 60) * (type === 'Production' ? settings.prod : settings.trajet);
-                detail = `${s1}-${e1}${s2 ? ' / ' + s2 + '-' + e2 : ''} (${Math.floor(total/60)}h${(total%60).toString().padStart(2, '0')})`;
+                val = ((d1 + d2) / 60) * (type === 'Production' ? settings.prod : settings.trajet);
+                detail = `${s1}-${e1}${s2 ? ' / ' + s2 + '-' + e2 : ''} (${Math.floor((d1+d2)/60)}h${((d1+d2)%60).toString().padStart(2, '0')})`;
             }
 
-            let logs = JSON.parse(localStorage.getItem('pro_data_v15') || '[]');
+            let logs = JSON.parse(localStorage.getItem('pro_data_v16') || '[]');
             logs.unshift({ id: Date.now(), date, project: project.toUpperCase(), type, val, detail });
-            localStorage.setItem('pro_data_v15', JSON.stringify(logs));
-            document.getElementById('project').value = ""; 
-            ['start1','end1','start2','end2'].forEach(id => document.getElementById(id).value = "");
-            render();
+            localStorage.setItem('pro_data_v16', JSON.stringify(logs));
+            document.getElementById('project').value = ""; render();
         }
 
         function toggleFacture(proj) {
-            let billed = JSON.parse(localStorage.getItem('billed_v15') || '[]');
+            let billed = JSON.parse(localStorage.getItem('billed_v16') || '[]');
             billed.includes(proj) ? billed = billed.filter(p => p !== proj) : billed.push(proj);
-            localStorage.setItem('billed_v15', JSON.stringify(billed)); render();
+            localStorage.setItem('billed_v16', JSON.stringify(billed)); render();
         }
 
         function render() {
-            const logs = JSON.parse(localStorage.getItem('pro_data_v15') || '[]');
-            const billedList = JSON.parse(localStorage.getItem('billed_v15') || '[]');
-            const typeClass = { 'Production': 'border-prod', 'Trajet': 'border-trajet', 'Pose Piges': 'border-pose', 'Pose Omnes': 'border-pose', 'Jours OFF': 'border-off' };
+            const logs = JSON.parse(localStorage.getItem('pro_data_v16') || '[]');
+            const billedList = JSON.parse(localStorage.getItem('billed_v16') || '[]');
+            document.getElementById('project-list').innerHTML = [...new Set(logs.map(l => l.project))].map(p => `<option value="${p}">`).join('');
 
             document.getElementById('recent-logs').innerHTML = logs.slice(0, 8).map(l => `
-                <div class="bento-card p-6 flex justify-between items-center animate-fade ${typeClass[l.type]}">
+                <div class="bento-card p-5 flex justify-between items-center animate-fade">
                     <div>
-                        <p class="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] mb-1">${formatDate(l.date)} • ${l.type}</p>
-                        <h4 class="font-bold text-slate-100 text-lg tracking-tight">${l.project}</h4>
-                        <p class="text-[10px] text-cyan-500/80 font-bold italic mt-1 uppercase tracking-widest">${l.detail}</p>
+                        <p class="text-[8px] font-black text-slate-600 uppercase mb-1">${formatDate(l.date)} • ${l.type}</p>
+                        <h4 class="font-bold text-slate-100 uppercase tracking-tight">${l.project}</h4>
+                        <p class="text-[9px] text-cyan-500 font-bold italic uppercase opacity-70">${l.detail}</p>
                     </div>
-                    <div class="text-right">
-                        <p class="font-bold text-2xl text-white mono tracking-tighter">${l.val.toFixed(2)}€</p>
-                    </div>
+                    <p class="font-bold text-xl text-white mono">${l.val.toFixed(2)}€</p>
                 </div>
             `).join('');
 
@@ -269,62 +182,46 @@
                 const isB = billedList.includes(proj);
                 let pT = grouped[proj].reduce((s, l) => s + l.val, 0);
                 isB ? tB += pT : tP += pT;
-
                 let rows = grouped[proj].map(l => `
-                    <tr class="border-b border-white/[0.02] hover:bg-white/[0.02] transition">
-                        <td class="py-6 px-4 font-bold text-slate-400 text-xs mono">${formatDate(l.date)}</td>
-                        <td class="py-6 px-4">
-                            <span class="text-[10px] font-black uppercase text-cyan-500 tracking-tighter block">${l.type}</span>
-                            <span class="text-[11px] font-medium text-slate-500 italic uppercase">${l.detail}</span>
-                        </td>
-                        <td class="py-6 px-4 text-right font-bold text-white text-lg mono">${l.val.toFixed(2)}€</td>
-                        <td class="py-6 px-4 text-center cursor-pointer text-slate-700 hover:text-red-500 transition" onclick="deleteItem(${l.id})">✕</td>
+                    <tr class="border-b border-white/[0.02]">
+                        <td class="py-4 px-3 font-bold text-slate-400 text-[11px] mono">${formatDate(l.date)}</td>
+                        <td class="py-4 px-3 text-[9px] font-black uppercase text-cyan-500">${l.type}<br><span class="text-slate-500 font-medium italic lowercase">${l.detail}</span></td>
+                        <td class="py-4 px-3 text-right font-bold text-white text-[15px] mono">${l.val.toFixed(2)}€</td>
+                        <td class="py-4 px-3 text-center text-slate-800" onclick="deleteItem(${l.id})">✕</td>
                     </tr>`).join('');
 
                 html += `
-                <div class="bento-card overflow-hidden ${isB ? 'opacity-40 grayscale-[0.8]' : ''}">
-                    <div class="p-8 flex justify-between items-center bg-white/[0.02] border-b border-white/5">
-                        <div>
-                            <h3 class="font-black text-2xl uppercase italic tracking-tighter">${proj}</h3>
-                            <span class="text-cyan-500 font-bold text-xs mono italic">${pT.toFixed(2)}€ TOTAL</span>
-                        </div>
-                        <button onclick="toggleFacture('${proj.replace(/'/g, "\\'")}')" class="px-6 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest border ${isB ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-white/5 text-slate-300 border-white/10'}">${isB ? 'Réactiver le projet' : 'Archiver la facture'}</button>
+                <div class="bento-card overflow-hidden mb-6 ${isB ? 'facture-true' : ''}">
+                    <div class="p-5 flex justify-between items-center bg-white/[0.02] border-b border-white/5">
+                        <div class="max-w-[60%]"><h3 class="font-black text-lg uppercase italic tracking-tighter truncate">${proj}</h3><span class="text-cyan-500 font-bold text-[10px] mono uppercase">${pT.toFixed(2)}€</span></div>
+                        <button onclick="toggleFacture('${proj.replace(/'/g, "\\'")}')" class="px-4 py-2 rounded-lg text-[8px] font-black uppercase tracking-widest border border-white/10">${isB ? 'Réouvrir' : 'Archiver'}</button>
                     </div>
                     <table class="w-full text-left"><tbody>${rows}</tbody></table>
                 </div>`;
             }
-            document.getElementById('tableContainer').innerHTML = html || "<div class='text-center py-20 text-slate-800 font-black uppercase tracking-[0.5em]'>Aucune archive</div>";
+            document.getElementById('tableContainer').innerHTML = html || "<div class='text-center py-10 text-slate-800 font-black uppercase text-[10px]'>Vide</div>";
             document.getElementById('total-pending').innerText = tP.toFixed(2) + " €";
             document.getElementById('total-billed').innerText = tB.toFixed(2) + " €";
             document.getElementById('total-annual').innerText = (tP + tB).toFixed(2) + " €";
         }
 
-        function deleteItem(id) { if(confirm("Supprimer l'entrée ?")) { let logs = JSON.parse(localStorage.getItem('pro_data_v15') || '[]'); logs = logs.filter(l => l.id !== id); localStorage.setItem('pro_data_v15', JSON.stringify(logs)); render(); } }
-        function clearLogs() { if(confirm("Vider la base de données ?")) { localStorage.clear(); location.reload(); } }
+        function deleteItem(id) { if(confirm("Supprimer ?")) { let logs = JSON.parse(localStorage.getItem('pro_data_v16') || '[]'); logs = logs.filter(l => l.id !== id); localStorage.setItem('pro_data_v16', JSON.stringify(logs)); render(); } }
+        function clearLogs() { if(confirm("Effacer tout ?")) { localStorage.clear(); location.reload(); } }
         function toggleModal(s) { document.getElementById('modal').classList.toggle('hidden', !s); if(s) render(); }
-        
         function copyToClipboard() {
-            const logs = JSON.parse(localStorage.getItem('pro_data_v15') || '[]');
-            let t = "EXPORT PROTRACK\n\n";
+            const logs = JSON.parse(localStorage.getItem('pro_data_v16') || '[]');
+            let t = "RELEVÉ PROTRACK\n\n";
             const g = logs.reduce((acc, log) => { (acc[log.project] = acc[log.project] || []).push(log); return acc; }, {});
-            for (const p in g) {
-                t += `${p}\n`;
-                g[p].forEach(l => t += `[${formatDate(l.date)}] ${l.type} - ${l.detail} : ${l.val.toFixed(2)}€\n`);
-                t += `SOUS-TOTAL : ${g[p].reduce((s,l)=>s+l.val,0).toFixed(2)}€\n\n`;
-            }
-            navigator.clipboard.writeText(t).then(() => alert("Copié pour vos notes."));
+            for (const p in g) { t += `${p}\n`; g[p].forEach(l => t += `- [${formatDate(l.date)}] ${l.type} : ${l.val.toFixed(2)}€\n`); t += `TOTAL : ${g[p].reduce((s,l)=>s+l.val,0).toFixed(2)}€\n\n`; }
+            navigator.clipboard.writeText(t).then(() => alert("Copié !"));
         }
-
         function exportCSV() {
-            const logs = JSON.parse(localStorage.getItem('pro_data_v15') || '[]');
-            let csv = "Date;Projet;Activite;Details;Montant\n";
-            logs.forEach(l => csv += `${formatDate(l.date)};${l.project};${l.type};${l.detail};${l.val.toFixed(2)}\n`);
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
-            link.download = "ProTrack_Finance.csv";
-            link.click();
+            const logs = JSON.parse(localStorage.getItem('pro_data_v16') || '[]');
+            let csv = "Date;Projet;Activite;Montant\n";
+            logs.forEach(l => csv += `${formatDate(l.date)};${l.project};${l.type};${l.val.toFixed(2)}\n`);
+            const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+            link.download = "ProTrack.csv"; link.click();
         }
-
         render(); toggleInputs();
     </script>
 </body>
