@@ -3,24 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrack V61</title>
+    <title>ProTrack V62</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background: #0f172a; color: white; font-family: sans-serif; margin: 0; padding-bottom: 90px; }
-        
-        /* Navigation */
         .nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: #1e293b; display: flex; border-top: 1px solid #475569; z-index: 9999; }
-        .nav-item { flex: 1; color: #64748b; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px; cursor: pointer; }
+        .nav-item { flex: 1; color: #64748b; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px; }
         .nav-item.active { color: #3b82f6; border-top: 3px solid #3b82f6; background: rgba(59, 130, 246, 0.1); }
-
-        /* Pages */
         .page { display: none; padding: 15px; }
         #pg0 { display: block; } 
-        
-        /* Elements */
         .card { background: #1e293b; border-radius: 10px; padding: 15px; margin-bottom: 15px; border: 1px solid #334155; }
         .input { background: #0f172a; border: 1px solid #475569; color: white; border-radius: 6px; padding: 12px; width: 100%; font-size: 16px; margin-bottom: 10px; display: block; }
         .btn { background: #2563eb; color: white; padding: 15px; border-radius: 10px; font-weight: bold; width: 100%; border: none; font-size: 16px; }
+        .btn-export { background: #10b981; color: white; padding: 12px; border-radius: 8px; font-weight: bold; width: 100%; border: none; font-size: 14px; margin-bottom: 15px; }
         .btn-sec { background: #334155; padding: 10px; font-size: 11px; color: white; border-radius: 5px; text-align: center; text-transform: uppercase; font-weight: bold; }
         .label { font-size: 11px; color: #94a3b8; margin-bottom: 5px; display: block; text-transform: uppercase; }
         .row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #334155; }
@@ -38,37 +33,26 @@
     </div>
 
     <div id="pg0" class="page">
-        <div onclick="openSet()" style="font-size:25px; margin-bottom:15px; cursor:pointer;">⚙️ Paramètres</div>
+        <div onclick="openSet()" style="font-size:25px; margin-bottom:15px;">⚙️</div>
         <div class="card">
-            <div class="grid">
-                <input type="date" id="in-date" class="input">
-                <input type="text" id="in-proj" placeholder="PROJET" class="input" list="plist">
-            </div>
+            <div class="grid"><input type="date" id="in-date" class="input"><input type="text" id="in-proj" placeholder="PROJET" class="input" list="plist"></div>
             <datalist id="plist"></datalist>
             <select id="in-type" class="input">
-                <option value="Production">Production</option>
-                <option value="Trajet">Trajet</option>
-                <option value="Pose Piges">Pose Piges</option>
-                <option value="Pose Omnes">Pose Omnes</option>
+                <option value="Production">Production</option><option value="Trajet">Trajet</option>
+                <option value="Pose Piges">Pose Piges</option><option value="Pose Omnes">Pose Omnes</option>
                 <option value="Jours OFF">Jours OFF</option>
             </select>
-            <label class="label">Matin</label>
             <div class="grid">
-                <input type="time" id="s1" class="input">
-                <input type="time" id="e1" class="input">
-            </div>
-            <label class="label">Après-midi</label>
-            <div class="grid">
-                <input type="time" id="s2" class="input">
-                <input type="time" id="e2" class="input">
+                <div><label class="label">Matin</label><input type="time" id="s1" class="input"><input type="time" id="e1" class="input"></div>
+                <div><label class="label">Aprem</label><input type="time" id="s2" class="input"><input type="time" id="e2" class="input"></div>
             </div>
             <button class="btn" onclick="saveData()">ENREGISTRER</button>
         </div>
-        <div class="label" style="margin-top:20px;">10 dernières saisies :</div>
         <div id="recent-list"></div>
     </div>
 
     <div id="pg1" class="page">
+        <button class="btn-export" onclick="exportData()">📤 EXPORTER VERS MON BLOC-NOTES</button>
         <div class="grid" style="margin-bottom:15px;">
             <div class="card" style="margin:0; text-align:center;"><div class="label">À Facturer</div><div id="sum-af" style="font-size:20px; font-weight:bold;">0€</div></div>
             <div class="card" style="margin:0; text-align:center;"><div class="label" style="color:#10b981;">Facturé</div><div id="sum-f" style="font-size:20px; font-weight:bold; color:#10b981;">0€</div></div>
@@ -78,134 +62,67 @@
 
     <div id="pg2" class="page"><div id="list-archive"></div></div>
 
-    <div id="set-modal" class="modal">
-        <div class="card" style="width:100%;">
-            <h3 style="margin:0 0 15px 0;">Tarifs</h3>
-            <div id="price-inputs"></div>
-            <button class="btn" onclick="closeSet()">Fermer</button>
-        </div>
-    </div>
+    <div id="set-modal" class="modal"><div class="card" style="width:100%;"><h3>Tarifs</h3><div id="price-inputs"></div><button class="btn" onclick="closeSet()">Fermer</button></div></div>
 
     <script>
-        // 1. NAVIGATION PRIORITAIRE (Chargée en premier)
+        let db = JSON.parse(localStorage.getItem('PT62_DATA') || '[]');
+        let billed = JSON.parse(localStorage.getItem('PT62_BILL') || '[]');
+        let archived = JSON.parse(localStorage.getItem('PT62_ARCH') || '[]');
+        let rates = JSON.parse(localStorage.getItem('PT62_RATE')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
+
         function navigate(n) {
-            const pages = ['pg0', 'pg1', 'pg2'];
-            const navs = ['nv0', 'nv1', 'nv2'];
-            for(let i=0; i<3; i++) {
-                document.getElementById(pages[i]).style.display = (i === n) ? 'block' : 'none';
-                document.getElementById(navs[i]).className = (i === n) ? 'nav-item active' : 'nav-item';
-            }
-            window.scrollTo(0,0);
+            ['pg0','pg1','pg2'].forEach((p,i)=>document.getElementById(p).style.display=(i===n)?'block':'none');
+            ['nv0','nv1','nv2'].forEach((v,i)=>document.getElementById(v).className=(i===n)?'nav-item active':'nav-item');
             render();
         }
 
-        // 2. DONNÉES
-        let db = JSON.parse(localStorage.getItem('PT61_DATA') || '[]');
-        let billed = JSON.parse(localStorage.getItem('PT61_BILL') || '[]');
-        let archived = JSON.parse(localStorage.getItem('PT61_ARCH') || '[]');
-        let rates = JSON.parse(localStorage.getItem('PT61_RATE')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
-
         function saveData() {
-            const d = document.getElementById('in-date').value;
-            const p = document.getElementById('in-proj').value.toUpperCase() || "DIVERS";
-            const t = document.getElementById('in-type').value;
+            const d = document.getElementById('in-date').value, p = document.getElementById('in-proj').value.toUpperCase() || "DIVERS", t = document.getElementById('in-type').value;
             if(!d) return;
-
-            const toM = (v) => { if(!v) return 0; const [h,m] = v.split(':'); return parseInt(h)*60 + parseInt(m); };
-            const s1 = toM(document.getElementById('s1').value), e1 = toM(document.getElementById('e1').value);
-            const s2 = toM(document.getElementById('s2').value), e2 = toM(document.getElementById('e2').value);
-            
-            let val = 0, hStr = "", dur = 0;
-            if(t.includes('Pose') || t === 'Jours OFF') {
-                val = t === 'Pose Piges' ? rates.piges : (t === 'Pose Omnes' ? rates.omnes : rates.off);
-                hStr = "FORFAIT";
-            } else {
-                let totalMin = (e1 - s1) + (e2 - s2);
-                if (s1 > 0 && e2 > 0 && e1 === 0 && s2 === 0) {
-                    totalMin = e2 - s1;
-                    hStr = document.getElementById('s1').value + "-" + document.getElementById('e2').value;
-                } else {
-                    let p1 = (s1 < e1) ? document.getElementById('s1').value + "-" + document.getElementById('e1').value : "";
-                    let p2 = (s2 < e2) ? document.getElementById('s2').value + "-" + document.getElementById('e2').value : "";
-                    hStr = (p1 && p2) ? p1 + " / " + p2 : (p1 || p2);
-                }
-                dur = totalMin / 60;
-                val = dur * (t === 'Production' ? rates.prod : rates.trajet);
-            }
-
-            db.unshift({ id: Date.now(), d, p, t, val, hStr, dur });
-            localStorage.setItem('PT61_DATA', JSON.stringify(db));
-            ['in-proj','s1','e1','s2','e2'].forEach(id => document.getElementById(id).value = "");
+            const toM = (v) => { if(!v) return 0; const [h,m] = v.split(':'); return parseInt(h)*60+parseInt(m); };
+            const s1=toM(document.getElementById('s1').value), e1=toM(document.getElementById('e1').value), s2=toM(document.getElementById('s2').value), e2=toM(document.getElementById('e2').value);
+            let val=0, hStr="", dur=0;
+            if(t.includes('Pose')||t==='Jours OFF') { val=t==='Pose Piges'?rates.piges:(t==='Pose Omnes'?rates.omnes:rates.off); hStr="FORFAIT"; }
+            else { dur=((e1-s1)+(e2-s2))/60; hStr=(s1<e1?document.getElementById('s1').value+"-"+document.getElementById('e1').value:"")+(s2<e2?" / "+document.getElementById('s2').value+"-"+document.getElementById('e2').value:""); val=dur*(t==='Production'?rates.prod:rates.trajet); }
+            db.unshift({id:Date.now(),d,p,t,val,hStr,dur});
+            localStorage.setItem('PT62_DATA',JSON.stringify(db));
+            ['in-proj','s1','e1','s2','e2'].forEach(id=>document.getElementById(id).value="");
             render();
+        }
+
+        function exportData() {
+            let txt = "SAUVEGARDE PROTRACK - " + new Date().toLocaleDateString() + "\n\n";
+            db.forEach(o => { txt += `${o.d} | ${o.p} | ${o.t} | ${o.hStr} | ${o.val.toFixed(2)}€\n`; });
+            
+            // Copie automatique dans le presse-papier pour que tu puisses coller dans ta note
+            const el = document.createElement('textarea');
+            el.value = txt;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            
+            alert("Données copiées ! Tu peux maintenant les coller dans ta note 'Sauvegarde ProTrack'.");
         }
 
         function render() {
-            document.getElementById('plist').innerHTML = [...new Set(db.map(x => x.p))].map(p => `<option value="${p}">`).join('');
+            document.getElementById('plist').innerHTML = [...new Set(db.map(x=>x.p))].map(p=>`<option value="${p}">`).join('');
+            document.getElementById('recent-list').innerHTML = db.slice(0,10).map(o=>`<div class="card" style="border-left:4px solid #3b82f6;padding:12px;"><div style="display:flex;justify-content:space-between;"><b>${o.p}</b><div><b style="color:#60a5fa;margin-right:10px;">${o.val.toFixed(2)}€</b><span onclick="delItem(${o.id})">🗑️</span></div></div><div style="font-size:11px;color:#94a3b8;margin-top:5px;">${o.d.split('-').reverse().join('/')} - ${o.hStr}</div></div>`).join('');
             
-            // Historique 10 saisies
-            document.getElementById('recent-list').innerHTML = db.slice(0, 10).map(o => `
-                <div class="card" style="border-left:4px solid #3b82f6; padding:12px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <b style="font-size:13px;">${o.p}</b>
-                        <div>
-                            <b style="color:#60a5fa; font-size:13px; margin-right:10px;">${o.val.toFixed(2)}€</b>
-                            <span onclick="delItem(${o.id})" style="font-size:18px; cursor:pointer;">🗑️</span>
-                        </div>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; font-size:11px; color:#94a3b8; margin-top:5px;">
-                        <span>${o.d.split('-').reverse().join('/')}</span>
-                        <span>${o.hStr} ${o.dur > 0 ? `<b class="blue-hours">(${o.dur.toFixed(2)}h)</b>` : ''}</span>
-                    </div>
-                </div>`).join('');
-            
-            let groups = db.reduce((acc, o) => { (acc[o.p] = acc[o.p] || []).push(o); return acc; }, {});
-            let hB = "", hA = "", tAF = 0, tF = 0;
-
-            for (let proj in groups) {
-                let isB = billed.includes(proj), isA = archived.includes(proj);
-                let totalVal = groups[proj].reduce((s, o) => s + o.val, 0);
-                if(!isA) { if(isB) tF += totalVal; else tAF += totalVal; }
-                let clr = isB ? '#10b981' : '#3b82f6';
-                let rows = groups[proj].map(o => `
-                    <div class="row">
-                        <span style="font-size:11px; width:75px;">${o.d.split('-').reverse().join('/')}</span>
-                        <div style="flex:1; text-align:center;">
-                            <span style="font-weight:bold; font-size:11px;">${o.hStr}</span>
-                            ${o.dur > 0 ? `<span class="blue-hours">${o.dur.toFixed(2)}h</span>` : ''}
-                        </div>
-                        <div style="width:80px; text-align:right;">
-                            <b style="font-size:12px;">${o.val.toFixed(2)}€</b>
-                            <span onclick="delItem(${o.id})" style="margin-left:8px; cursor:pointer;">🗑️</span>
-                        </div>
-                    </div>`).join('');
-                
-                let card = `<div class="card" style="border-left:5px solid ${clr}">
-                    <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:10px;">
-                        <span>${proj}</span><span style="color:${clr};">${totalVal.toFixed(2)}€</span>
-                    </div>
-                    ${rows}
-                    <div class="grid" style="margin-top:10px;">
-                        ${isA ? `<div class="btn-sec" onclick="toggleArch('${proj}')">Réactiver</div>` : 
-                        `<div class="btn-sec" onclick="toggleBill('${proj}')" style="background:${isB?'#064e3b':'#334155'}; border:${isB?'1px solid #10b981':'none'}">${isB?'À FACTURER':'FACTURÉ'}</div>
-                         <div class="btn-sec" onclick="toggleArch('${proj}')" style="color:#60a5fa">ARCHIVER</div>`}
-                    </div>
-                </div>`;
-                if(isA) hA += card; else hB += card;
+            let hB="", hA="", tAF=0, tF=0, groups=db.reduce((acc,o)=>{(acc[o.p]=acc[o.p]||[]).push(o);return acc;},{});
+            for(let proj in groups) {
+                let isB=billed.includes(proj), isA=archived.includes(proj), total=groups[proj].reduce((s,o)=>s+o.val,0);
+                if(!isA){ if(isB) tF+=total; else tAF+=total; }
+                let clr=isB?'#10b981':'#3b82f6';
+                let card = `<div class="card" style="border-left:5px solid ${clr}"><div style="display:flex;justify-content:space-between;font-weight:bold;"><span>${proj}</span><span style="color:${clr};">${total.toFixed(2)}€</span></div>
+                <div class="grid" style="margin-top:10px;">${isA?`<div class="btn-sec" onclick="toggleArch('${proj}')">Réactiver</div>`:`<div class="btn-sec" onclick="toggleBill('${proj}')" style="background:${isB?'#064e3b':'#334155'}">${isB?'À FACTURER':'FACTURÉ'}</div><div class="btn-sec" onclick="toggleArch('${proj}')" style="color:#60a5fa">ARCHIVER</div>`}</div></div>`;
+                if(isA) hA+=card; else hB+=card;
             }
-            document.getElementById('list-bilan').innerHTML = hB || "Vide";
-            document.getElementById('list-archive').innerHTML = hA || "Vide";
-            document.getElementById('sum-af').innerText = tAF.toFixed(2) + "€";
-            document.getElementById('sum-f').innerText = tF.toFixed(2) + "€";
+            document.getElementById('list-bilan').innerHTML=hB||"Vide";
+            document.getElementById('list-archive').innerHTML=hA||"Vide";
+            document.getElementById('sum-af').innerText=tAF.toFixed(2)+"€";
+            document.getElementById('sum-f').innerText=tF.toFixed(2)+"€";
         }
 
-        function delItem(id) { if(confirm("Supprimer ?")) { db = db.filter(x => x.id !== id); localStorage.setItem('PT61_DATA', JSON.stringify(db)); render(); } }
-        function toggleBill(p) { billed.includes(p) ? billed = billed.filter(x => x!==p) : billed.push(p); localStorage.setItem('PT61_BILL', JSON.stringify(billed)); render(); }
-        function toggleArch(p) { archived.includes(p) ? archived = archived.filter(x => x!==p) : archived.push(p); localStorage.setItem('PT61_ARCH', JSON.stringify(archived)); render(); }
-        function openSet() { document.getElementById('price-inputs').innerHTML = Object.keys(rates).map(k => `<label class="label">${k}</label><input type="number" id="rt-${k}" value="${rates[k]}" class="input">`).join(''); document.getElementById('set-modal').style.display = 'flex'; }
-        function closeSet() { Object.keys(rates).forEach(k => rates[k] = parseFloat(document.getElementById(`rt-${k}`).value)); localStorage.setItem('PT61_RATE', JSON.stringify(rates)); document.getElementById('set-modal').style.display = 'none'; render(); }
-
-        document.getElementById('in-date').valueAsDate = new Date();
-        render();
-    </script>
-</body>
-</html>
+        function delItem(id){ if(confirm("Supprimer ?")){ db=db.filter(x=>x.id!==id); localStorage.setItem('PT62_DATA',JSON.stringify(db)); render(); }}
+        function toggleBill(p){
