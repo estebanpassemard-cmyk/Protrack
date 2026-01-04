@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrack V66</title>
+    <title>ProTrack V67</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background: #0f172a; color: white; font-family: sans-serif; margin: 0; padding-bottom: 90px; }
@@ -18,9 +18,9 @@
         .btn-save { background: #10b981; color: white; padding: 12px; border-radius: 8px; font-weight: bold; width: 100%; border: none; margin-bottom: 15px; }
         .btn-sec { background: #334155; padding: 10px; font-size: 11px; color: white; border-radius: 5px; text-align: center; text-transform: uppercase; font-weight: bold; }
         .label { font-size: 11px; color: #94a3b8; margin-bottom: 5px; display: block; text-transform: uppercase; }
-        .row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #334155; }
+        .row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #334155; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .blue-hours { color: #3b82f6; font-weight: bold; font-size: 11px; margin-top: 2px; display: block; }
+        .blue-hours { color: #3b82f6; font-weight: bold; font-size: 11px; display: block; }
         .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:10000; padding:20px; align-items:center; }
     </style>
 </head>
@@ -52,7 +52,7 @@
     </div>
 
     <div id="pg1" class="page">
-        <button class="btn-save" onclick="copyData()">📤 SAUVEGARDER (COPIER TOUT)</button>
+        <button class="btn-save" onclick="copyData()">📤 SAUVEGARDER (COPIÉ DANS NOTES)</button>
         <div class="grid" style="margin-bottom:15px;">
             <div class="card" style="margin:0; text-align:center;"><div class="label">À Facturer</div><div id="sum-af" style="font-size:20px; font-weight:bold;">0€</div></div>
             <div class="card" style="margin:0; text-align:center;"><div class="label" style="color:#10b981;">Facturé</div><div id="sum-f" style="font-size:20px; font-weight:bold; color:#10b981;">0€</div></div>
@@ -65,7 +65,6 @@
     <div id="set-modal" class="modal"><div class="card" style="width:100%;"><h3>Tarifs</h3><div id="price-inputs"></div><button class="btn" onclick="closeSet()">Fermer</button></div></div>
 
     <script>
-        // ON REPREND LES MEMES STOCKS QUE LA V61 POUR NE PAS PERDRE TES DONNEES
         let db = JSON.parse(localStorage.getItem('PT61_DATA') || '[]');
         let billed = JSON.parse(localStorage.getItem('PT61_BILL') || '[]');
         let archived = JSON.parse(localStorage.getItem('PT61_ARCH') || '[]');
@@ -85,7 +84,7 @@
             const d = document.getElementById('in-date').value;
             const p = document.getElementById('in-proj').value.toUpperCase() || "DIVERS";
             const t = document.getElementById('in-type').value;
-            if(!d) return alert("Date ?");
+            if(!d) return;
             const toM = (v) => { if(!v) return 0; const [h,m] = v.split(':'); return parseInt(h)*60+parseInt(m); };
             const s1=toM(document.getElementById('s1').value), e1=toM(document.getElementById('e1').value), s2=toM(document.getElementById('s2').value), e2=toM(document.getElementById('e2').value);
             let val=0, hStr="", dur=0;
@@ -98,41 +97,16 @@
         }
 
         function copyData() {
-            let txt = "SAUVEGARDE PROTRACK\n\n";
-            db.forEach(o => { txt += `${o.d} | ${o.p} | ${o.val.toFixed(2)}€\n`; });
+            let txt = "SAUVEGARDE PROTRACK - " + new Date().toLocaleDateString() + "\n\n";
+            db.forEach(o => { txt += `${o.d.split('-').reverse().join('/')} | ${o.p} | ${o.val.toFixed(2)}€\n`; });
             const el = document.createElement('textarea');
             el.value = txt; document.body.appendChild(el); el.select();
             document.execCommand('copy'); document.body.removeChild(el);
-            alert("Copié ! Colle-le dans tes notes.");
+            // Pas d'alerte ici pour rester fluide
         }
 
         function render() {
+            const fmtD = (s) => s.split('-').reverse().join('/');
             document.getElementById('plist').innerHTML = [...new Set(db.map(x => x.p))].map(p => `<option value="${p}">`).join('');
-            document.getElementById('recent-list').innerHTML = db.slice(0, 10).map(o => `
-                <div class="card" style="border-left:4px solid #3b82f6; padding:12px;">
-                    <div style="display:flex; justify-content:space-between;"><b>${o.p}</b><div><b>${o.val.toFixed(2)}€</b> <span onclick="delItem(${o.id})">🗑️</span></div></div>
-                    <div style="font-size:11px; color:#94a3b8; margin-top:5px;">${o.d} - ${o.hStr}</div>
-                </div>`).join('');
-            let hB="", hA="", tAF=0, tF=0, groups=db.reduce((acc,o)=>{(acc[o.p]=acc[o.p]||[]).push(o);return acc;},{});
-            for(let proj in groups) {
-                let isB=billed.includes(proj), isA=archived.includes(proj), total=groups[proj].reduce((s,o)=>s+o.val,0);
-                if(!isA){ if(isB) tF+=total; else tAF+=total; }
-                let clr=isB?'#10b981':'#3b82f6';
-                let card = `<div class="card" style="border-left:5px solid ${clr}"><div style="display:flex;justify-content:space-between;font-weight:bold;"><span>${proj}</span><span style="color:${clr};">${total.toFixed(2)}€</span></div>
-                <div class="grid" style="margin-top:10px;">${isA?`<div class="btn-sec" onclick="toggleArch('${proj}')">Réactiver</div>`:`<div class="btn-sec" onclick="toggleBill('${proj}')" style="background:${isB?'#064e3b':'#334155'}">${isB?'À FACTURER':'FACTURÉ'}</div><div class="btn-sec" onclick="toggleArch('${proj}')" style="color:#60a5fa">ARCHIVER</div>`}</div></div>`;
-                if(isA) hA+=card; else hB+=card;
-            }
-            document.getElementById('list-bilan').innerHTML=hB; document.getElementById('list-archive').innerHTML=hA;
-            document.getElementById('sum-af').innerText=tAF.toFixed(2)+"€"; document.getElementById('sum-f').innerText=tF.toFixed(2)+"€";
-        }
-
-        function delItem(id) { if(confirm("Supprimer ?")) { db=db.filter(x=>x.id!==id); localStorage.setItem('PT61_DATA',JSON.stringify(db)); render(); } }
-        function toggleBill(p) { billed.includes(p)?billed=billed.filter(x=>x!==p):billed.push(p); localStorage.setItem('PT61_BILL',JSON.stringify(billed)); render(); }
-        function toggleArch(p) { archived.includes(p)?archived=archived.filter(x=>x!==p):archived.push(p); localStorage.setItem('PT61_ARCH',JSON.stringify(archived)); render(); }
-        function openSet() { document.getElementById('price-inputs').innerHTML = Object.keys(rates).map(k => `<label class="label">${k}</label><input type="number" id="rt-${k}" value="${rates[k]}" class="input">`).join(''); document.getElementById('set-modal').style.display = 'flex'; }
-        function closeSet() { Object.keys(rates).forEach(k => rates[k] = parseFloat(document.getElementById(`rt-${k}`).value)); localStorage.setItem('PT61_RATE', JSON.stringify(rates)); document.getElementById('set-modal').style.display = 'none'; render(); }
-        document.getElementById('in-date').valueAsDate = new Date();
-        render();
-    </script>
-</body>
-</html>
+            
+            document.getElementById('recent-list').innerHTML = db.slice(0, 10).map(o =>
