@@ -3,31 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrack V44</title>
+    <title>ProTrack V45</title>
     <style>
-        /* RESET TOTAL POUR ÉVITER LES CONFLITS MOBILES */
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         html, body { 
             background: #0f172a; color: white; font-family: -apple-system, sans-serif; 
             margin: 0; height: 100%; overflow: hidden; position: fixed; width: 100%; 
         }
-        
-        /* STRUCTURE DES PAGES */
         .page { display: none; height: calc(100vh - 80px); overflow-y: auto; padding: 20px; -webkit-overflow-scrolling: touch; }
-        #pg0 { display: block; } /* Saisie visible au départ */
-
+        #pg0 { display: block; } 
         .card { background: #1e293b; border-radius: 12px; padding: 15px; margin-bottom: 15px; border: 1px solid #334155; }
         .input { background: #0f172a; border: 1px solid #475569; color: white; border-radius: 8px; padding: 12px; width: 100%; font-size: 16px; margin-bottom: 10px; display: block; }
-        
-        /* BOUTONS RENFORCÉS */
         .btn { background: #2563eb; color: white; padding: 18px; border-radius: 12px; font-weight: 800; width: 100%; text-align: center; text-transform: uppercase; border: none; display: block; }
-        .btn-sec { background: #334155; padding: 10px; font-size: 11px; color: white; border-radius: 6px; text-align: center; font-weight: bold; }
-
-        /* NAVIGATION BASSE */
+        .btn-sec { background: #334155; padding: 10px; font-size: 11px; color: white; border-radius: 6px; text-align: center; font-weight: bold; text-transform: uppercase; }
         .nav { position: fixed; bottom: 0; width: 100%; height: 80px; background: #1e293b; display: flex; border-top: 1px solid #475569; z-index: 9999; }
         .nav-item { flex: 1; color: #64748b; display: flex; align-items: center; justify-content: center; font-weight: 800; text-transform: uppercase; font-size: 12px; height: 100%; }
         .nav-item.active { color: #3b82f6; background: rgba(59, 130, 246, 0.1); border-top: 4px solid #3b82f6; }
-
         .label { font-size: 10px; color: #94a3b8; text-transform: uppercase; font-weight: 800; margin-bottom: 4px; display: block; }
         .row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #334155; font-size: 12px; }
         .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:10000; padding:20px; align-items:center; justify-content:center; }
@@ -43,14 +34,12 @@
 
     <div id="pg0" class="page">
         <div onclick="openSet(event)" style="font-size:32px; margin-bottom:20px; padding:10px; width:60px;">⚙️</div>
-        
         <div class="card">
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
                 <input type="date" id="in-date" class="input">
                 <input type="text" id="in-proj" placeholder="PROJET" class="input" list="plist">
             </div>
             <datalist id="plist"></datalist>
-
             <select id="in-type" class="input" style="color:#60a5fa; font-weight:800;">
                 <option value="Production">Production</option>
                 <option value="Trajet">Trajet</option>
@@ -58,16 +47,12 @@
                 <option value="Pose Omnes">Pose Omnes</option>
                 <option value="Jours OFF">Jours OFF</option>
             </select>
-
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
                 <div><label class="label">Matin</label><input type="time" id="s1" class="input"><input type="time" id="e1" class="input"></div>
                 <div><label class="label">Aprem</label><input type="time" id="s2" class="input"><input type="time" id="e2" class="input"></div>
             </div>
-
             <button class="btn" onclick="saveData(event)">ENREGISTRER</button>
         </div>
-
-        <div style="font-size:11px; color:#64748b; text-transform:uppercase; margin:20px 0 10px 5px; font-weight:800;">Dernières saisies</div>
         <div id="recent-list"></div>
     </div>
 
@@ -79,9 +64,7 @@
         <div id="list-bilan"></div>
     </div>
 
-    <div id="pg2" class="page">
-        <div id="list-archive"></div>
-    </div>
+    <div id="pg2" class="page"><div id="list-archive"></div></div>
 
     <div id="set-modal" class="modal">
         <div class="card" style="width:100%;">
@@ -92,7 +75,6 @@
     </div>
 
     <script>
-        // INITIALISATION
         let db = JSON.parse(localStorage.getItem('PT44_DATA') || '[]');
         let billed = JSON.parse(localStorage.getItem('PT44_BILL') || '[]');
         let archived = JSON.parse(localStorage.getItem('PT44_ARCH') || '[]');
@@ -100,35 +82,25 @@
 
         const $ = (id) => document.getElementById(id);
 
-        // NAVIGATION FONCTIONNELLE
         window.goto = function(e, n) {
             if(e) e.stopPropagation();
-            
-            // Masquage absolu
             for(let i=0; i<3; i++) {
                 $(`pg${i}`).style.setProperty('display', 'none', 'important');
                 $(`nv${i}`).classList.remove('active');
             }
-            
-            // Affichage absolu
             $(`pg${n}`).style.setProperty('display', 'block', 'important');
             $(`nv${n}`).classList.add('active');
-            
             render();
         };
 
-        // SAUVEGARDE
         window.saveData = function(e) {
             if(e) e.stopPropagation();
             const d = $('in-date').value;
             const p = $('in-proj').value.toUpperCase() || "DIVERS";
             const t = $('in-type').value;
             if(!d) { alert("Veuillez choisir une date"); return; }
-
             const toM = (v) => { if(!v) return null; const [h,m] = v.split(':'); return parseInt(h)*60 + parseInt(m); };
-            const ms = toM($('s1').value), me = toM($('e1').value);
-            const as = toM($('s2').value), ae = toM($('e2').value);
-
+            const ms = toM($('s1').value), me = toM($('e1').value), as = toM($('s2').value), ae = toM($('e2').value);
             let val = 0, hStr = "";
 
             if(t.includes('Pose') || t === 'Jours OFF') {
@@ -136,7 +108,6 @@
                 hStr = "FORFAIT";
             } else {
                 let totalMin = 0;
-                // Cas journée continue (Arrivée matin + Départ après-midi seulement)
                 if (ms !== null && ae !== null && me === null && as === null) {
                     totalMin = ae - ms;
                     hStr = $('s1').value + " - " + $('e2').value;
@@ -151,51 +122,23 @@
                 if(totalMin <= 0) { alert("Erreur dans les horaires"); return; }
                 val = (totalMin/60) * (t === 'Production' ? rates.prod : rates.trajet);
             }
-
             db.unshift({ id: Date.now(), d, p, t, val, hStr });
             localStorage.setItem('PT44_DATA', JSON.stringify(db));
-            
-            alert("Saisie enregistrée avec succès !");
+            alert("Saisie enregistrée !");
             ['in-proj','s1','e1','s2','e2'].forEach(id => $(id).value = "");
             render();
         };
 
         function render() {
-            $('recent-list').innerHTML = db.slice(0, 3).map(o => `
-                <div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-left:4px solid #3b82f6;">
-                    <div style="font-size:11px;"><b>${o.p}</b><br>${o.hStr}</div>
-                    <b style="color:#60a5fa;">${o.val.toFixed(2)}€</b>
-                </div>`).join('');
-
+            $('recent-list').innerHTML = db.slice(0, 3).map(o => `<div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-left:4px solid #3b82f6;"><div style="font-size:11px;"><b>${o.p}</b><br>${o.hStr}</div><b style="color:#60a5fa;">${o.val.toFixed(2)}€</b></div>`).join('');
             let groups = db.reduce((acc, o) => { (acc[o.p] = acc[o.p] || []).push(o); return acc; }, {});
             let hB = "", hA = "", tAF = 0, tF = 0;
-
             for (let proj in groups) {
                 let isB = billed.includes(proj), isA = archived.includes(proj);
                 let total = groups[proj].reduce((s, o) => s + o.val, 0);
                 if(!isA) { if(isB) tF += total; else tAF += total; }
-
-                let rows = groups[proj].map(o => `
-                    <div class="row">
-                        <span style="color:#94a3b8; width:70px;">${o.d.split('-').reverse().join('/')}</span>
-                        <span style="flex:1; text-align:center; font-weight:bold;">${o.hStr}</span>
-                        <div style="width:80px; text-align:right;">
-                            <b>${o.val.toFixed(2)}€</b>
-                            <span onclick="delItem(event, ${o.id})" style="margin-left:10px; font-size:16px;">🗑️</span>
-                        </div>
-                    </div>`).join('');
-
-                let card = `<div class="card" style="border-left:${(!isA && isB) ? '6px solid #ef4444' : '1px solid #334155'}">
-                    <div style="display:flex; justify-content:space-between; font-weight:900; margin-bottom:10px;">
-                        <span>${proj}</span><span style="color:#3b82f6;">${total.toFixed(2)}€</span>
-                    </div>
-                    ${rows}
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">
-                        ${isA ? `<div class="btn-sec" onclick="toggleArch(event, '${proj.replace(/'/g,"\\'")}')">RÉACTIVER</div>` : 
-                        `<div class="btn-sec" onclick="toggleBill(event, '${proj.replace(/'/g,"\\'")}')" style="background:${isB?'#1e293b':'#334155'}">${isB?'À PAYER':'PAYÉ'}</div>
-                         <div class="btn-sec" onclick="toggleArch(event, '${proj.replace(/'/g,"\\'")}')" style="color:#60a5fa">ARCHIVER</div>`}
-                    </div>
-                </div>`;
+                let rows = groups[proj].map(o => `<div class="row"><span style="color:#94a3b8; width:70px;">${o.d.split('-').reverse().join('/')}</span><span style="flex:1; text-align:center; font-weight:bold;">${o.hStr}</span><div style="width:80px; text-align:right;"><b>${o.val.toFixed(2)}€</b><span onclick="delItem(event, ${o.id})" style="margin-left:10px; font-size:16px;">🗑️</span></div></div>`).join('');
+                let card = `<div class="card" style="border-left:${(!isA && isB) ? '6px solid #ef4444' : '1px solid #334155'}"><div style="display:flex; justify-content:space-between; font-weight:900; margin-bottom:10px;"><span>${proj}</span><span style="color:#3b82f6;">${total.toFixed(2)}€</span></div>${rows}<div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">${isA ? `<div class="btn-sec" onclick="toggleArch(event, '${proj.replace(/'/g,"\\'")}')">RÉACTIVER</div>` : `<div class="btn-sec" onclick="toggleBill(event, '${proj.replace(/'/g,"\\'")}')" style="background:${isB?'#1e293b':'#334155'}">${isB?'À FACTURER':'FACTURÉ'}</div><div class="btn-sec" onclick="toggleArch(event, '${proj.replace(/'/g,"\\'")}')" style="color:#60a5fa">ARCHIVER</div>`}</div></div>`;
                 if(isA) hA += card; else hB += card;
             }
             $('list-bilan').innerHTML = hB || "Aucune donnée";
