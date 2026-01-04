@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrack V61-BC</title>
+    <title>ProTrack V61-FINAL</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background: #0f172a; color: white; font-family: sans-serif; margin: 0; padding-bottom: 90px; }
@@ -18,9 +18,10 @@
         .btn-save { background: #10b981; color: white; padding: 12px; border-radius: 8px; font-weight: bold; width: 100%; border: none; margin-bottom: 15px; }
         .btn-sec { background: #334155; padding: 10px; font-size: 10px; color: white; border-radius: 5px; text-align: center; text-transform: uppercase; font-weight: bold; flex: 1; }
         .label { font-size: 11px; color: #94a3b8; margin-bottom: 5px; display: block; text-transform: uppercase; }
-        .row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #334155; font-size: 11px; color: #cbd5e1; }
+        .row-item { border-bottom: 1px solid #334155; padding: 10px 0; }
+        .row-main { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .blue-h { color: #3b82f6; font-weight: bold; font-size: 10px; }
+        .blue-h { color: #3b82f6; font-weight: bold; font-size: 11px; display: block; margin-top: 4px; }
         .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:10000; padding:20px; align-items:center; }
     </style>
 </head>
@@ -103,7 +104,7 @@
             let txt = "EXPORT PROTRACK\n\n";
             for (let proj in groups) {
                 txt += proj + " :\n";
-                groups[proj].forEach(o => { txt += `- ${o.d.split('-').reverse().join('/')} [${o.hStr}] : ${o.val.toFixed(2)}€\n`; });
+                groups[proj].forEach(o => { txt += `- ${o.d.split('-').reverse().join('/')} [${o.hStr}] (${o.dur.toFixed(2)}h) : ${o.val.toFixed(2)}€\n`; });
                 txt += "\n";
             }
             const el = document.createElement('textarea'); el.value = txt; document.body.appendChild(el); el.select();
@@ -125,37 +126,7 @@
                 if(!isA){ if(isB) tF+=total; else tAF+=total; }
                 let clr=isB?'#10b981':'#3b82f6';
                 
-                // Détail des lignes dans la carte
                 let lines = groups[proj].map(o => `
-                    <div class="row">
-                        <span>${o.d.split('-').reverse().join('/')}</span>
-                        <span style="flex:1; text-align:center;">${o.hStr} ${o.dur>0 ? `<span class="blue-h">(${o.dur.toFixed(2)}h)</span>`:''}</span>
-                        <span style="font-weight:bold;">${o.val.toFixed(2)}€</span>
-                    </div>`).join('');
-
-                let card = `<div class="card" style="border-left:5px solid ${clr}">
-                    <div style="display:flex;justify-content:space-between;font-weight:bold;margin-bottom:10px;"><span>${proj}</span><span style="color:${clr};">${total.toFixed(2)}€</span></div>
-                    ${lines}
-                    <div style="display:flex; gap:10px; margin-top:12px;">
-                        <div class="btn-sec" onclick="toggleBill('${proj}')" style="background:${isB?'#064e3b':'#334155'}">${isB?'À FACTURER':'FACTURÉ'}</div>
-                        ${!isA ? `<div class="btn-sec" onclick="toggleArch('${proj}')" style="color:#60a5fa">ARCHIVER</div>` : `<div class="btn-sec" onclick="toggleArch('${proj}')">RÉACTIVER</div>`}
-                    </div>
-                </div>`;
-                if(isA) hA+=card; else hB+=card;
-            }
-            document.getElementById('list-bilan').innerHTML=hB || "Aucune donnée";
-            document.getElementById('list-archive').innerHTML=hA || "Vide";
-            document.getElementById('sum-af').innerText=tAF.toFixed(2)+"€";
-            document.getElementById('sum-f').innerText=tF.toFixed(2)+"€";
-        }
-
-        function delItem(id) { if(confirm("Supprimer ?")) { db=db.filter(x=>x.id!==id); localStorage.setItem('PT61_DATA',JSON.stringify(db)); render(); } }
-        function toggleBill(p) { billed.includes(p)?billed=billed.filter(x=>x!==p):billed.push(p); localStorage.setItem('PT61_BILL',JSON.stringify(billed)); render(); }
-        function toggleArch(p) { archived.includes(p)?archived=archived.filter(x=>x!==p):archived.push(p); localStorage.setItem('PT61_ARCH',JSON.stringify(archived)); render(); }
-        function openSet() { document.getElementById('price-inputs').innerHTML = Object.keys(rates).map(k => `<label class="label">${k}</label><input type="number" id="rt-${k}" value="${rates[k]}" class="input">`).join(''); document.getElementById('set-modal').style.display = 'flex'; }
-        function closeSet() { Object.keys(rates).forEach(k => rates[k] = parseFloat(document.getElementById(`rt-${k}`).value)); localStorage.setItem('PT61_RATE', JSON.stringify(rates)); document.getElementById('set-modal').style.display = 'none'; render(); }
-        document.getElementById('in-date').valueAsDate = new Date();
-        render();
-    </script>
-</body>
-</html>
+                    <div class="row-item">
+                        <div class="row-main">
+                            <span>${o.d.split('-').reverse().join('/')
