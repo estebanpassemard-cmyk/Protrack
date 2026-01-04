@@ -2,36 +2,39 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ProTrack V60</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ProTrack V61</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { 
-            background: #0f172a; color: white; font-family: sans-serif; 
-            margin: 0; padding-bottom: 90px;
-        }
+        body { background: #0f172a; color: white; font-family: sans-serif; margin: 0; padding-bottom: 90px; }
+        
+        /* Navigation */
+        .nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: #1e293b; display: flex; border-top: 1px solid #475569; z-index: 9999; }
+        .nav-item { flex: 1; color: #64748b; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px; cursor: pointer; }
+        .nav-item.active { color: #3b82f6; border-top: 3px solid #3b82f6; background: rgba(59, 130, 246, 0.1); }
+
+        /* Pages */
         .page { display: none; padding: 15px; }
         #pg0 { display: block; } 
+        
+        /* Elements */
         .card { background: #1e293b; border-radius: 10px; padding: 15px; margin-bottom: 15px; border: 1px solid #334155; }
         .input { background: #0f172a; border: 1px solid #475569; color: white; border-radius: 6px; padding: 12px; width: 100%; font-size: 16px; margin-bottom: 10px; display: block; }
         .btn { background: #2563eb; color: white; padding: 15px; border-radius: 10px; font-weight: bold; width: 100%; border: none; font-size: 16px; }
         .btn-sec { background: #334155; padding: 10px; font-size: 11px; color: white; border-radius: 5px; text-align: center; text-transform: uppercase; font-weight: bold; }
-        .nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: #1e293b; display: flex; border-top: 1px solid #475569; z-index: 1000; }
-        .nav-item { flex: 1; color: #64748b; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px; }
-        .nav-item.active { color: #3b82f6; border-top: 3px solid #3b82f6; background: rgba(59, 130, 246, 0.1); }
         .label { font-size: 11px; color: #94a3b8; margin-bottom: 5px; display: block; text-transform: uppercase; }
         .row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #334155; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .blue-hours { color: #3b82f6; font-weight: bold; font-size: 11px; margin-top: 2px; display: block; }
-        .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:2000; padding:20px; align-items:center; }
+        .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:10000; padding:20px; align-items:center; }
     </style>
 </head>
 <body>
 
     <div class="nav">
-        <div id="nv0" class="nav-item active" onclick="goto(0)">Saisie</div>
-        <div id="nv1" class="nav-item" onclick="goto(1)">Bilan</div>
-        <div id="nv2" class="nav-item" onclick="goto(2)">Archives</div>
+        <div id="nv0" class="nav-item active" onclick="navigate(0)">Saisie</div>
+        <div id="nv1" class="nav-item" onclick="navigate(1)">Bilan</div>
+        <div id="nv2" class="nav-item" onclick="navigate(2)">Archives</div>
     </div>
 
     <div id="pg0" class="page">
@@ -84,27 +87,29 @@
     </div>
 
     <script>
-        let db = JSON.parse(localStorage.getItem('PT60_DATA') || '[]');
-        let billed = JSON.parse(localStorage.getItem('PT60_BILL') || '[]');
-        let archived = JSON.parse(localStorage.getItem('PT60_ARCH') || '[]');
-        let rates = JSON.parse(localStorage.getItem('PT60_RATE')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
-
-        function goto(n) {
-            document.getElementById('pg0').style.display = n === 0 ? 'block' : 'none';
-            document.getElementById('pg1').style.display = n === 1 ? 'block' : 'none';
-            document.getElementById('pg2').style.display = n === 2 ? 'block' : 'none';
-            document.getElementById('nv0').classList.toggle('active', n === 0);
-            document.getElementById('nv1').classList.toggle('active', n === 1);
-            document.getElementById('nv2').classList.toggle('active', n === 2);
+        // 1. NAVIGATION PRIORITAIRE (Chargée en premier)
+        function navigate(n) {
+            const pages = ['pg0', 'pg1', 'pg2'];
+            const navs = ['nv0', 'nv1', 'nv2'];
+            for(let i=0; i<3; i++) {
+                document.getElementById(pages[i]).style.display = (i === n) ? 'block' : 'none';
+                document.getElementById(navs[i]).className = (i === n) ? 'nav-item active' : 'nav-item';
+            }
             window.scrollTo(0,0);
             render();
         }
+
+        // 2. DONNÉES
+        let db = JSON.parse(localStorage.getItem('PT61_DATA') || '[]');
+        let billed = JSON.parse(localStorage.getItem('PT61_BILL') || '[]');
+        let archived = JSON.parse(localStorage.getItem('PT61_ARCH') || '[]');
+        let rates = JSON.parse(localStorage.getItem('PT61_RATE')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
 
         function saveData() {
             const d = document.getElementById('in-date').value;
             const p = document.getElementById('in-proj').value.toUpperCase() || "DIVERS";
             const t = document.getElementById('in-type').value;
-            if(!d) return alert("Date ?");
+            if(!d) return;
 
             const toM = (v) => { if(!v) return 0; const [h,m] = v.split(':'); return parseInt(h)*60 + parseInt(m); };
             const s1 = toM(document.getElementById('s1').value), e1 = toM(document.getElementById('e1').value);
@@ -129,16 +134,15 @@
             }
 
             db.unshift({ id: Date.now(), d, p, t, val, hStr, dur });
-            localStorage.setItem('PT60_DATA', JSON.stringify(db));
+            localStorage.setItem('PT61_DATA', JSON.stringify(db));
             ['in-proj','s1','e1','s2','e2'].forEach(id => document.getElementById(id).value = "");
             render();
-            // L'alerte de confirmation a été supprimée ici pour plus de fluidité
         }
 
         function render() {
-            const projs = [...new Set(db.map(x => x.p))];
-            document.getElementById('plist').innerHTML = projs.map(p => `<option value="${p}">`).join('');
-
+            document.getElementById('plist').innerHTML = [...new Set(db.map(x => x.p))].map(p => `<option value="${p}">`).join('');
+            
+            // Historique 10 saisies
             document.getElementById('recent-list').innerHTML = db.slice(0, 10).map(o => `
                 <div class="card" style="border-left:4px solid #3b82f6; padding:12px;">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -150,9 +154,58 @@
                     </div>
                     <div style="display:flex; justify-content:space-between; font-size:11px; color:#94a3b8; margin-top:5px;">
                         <span>${o.d.split('-').reverse().join('/')}</span>
-                        <span>${o.hStr} ${o.dur > 0 ? `<b style="color:#3b82f6;">(${o.dur.toFixed(2)}h)</b>` : ''}</span>
+                        <span>${o.hStr} ${o.dur > 0 ? `<b class="blue-hours">(${o.dur.toFixed(2)}h)</b>` : ''}</span>
                     </div>
-                </div>
-            `).join('');
+                </div>`).join('');
             
-            let groups
+            let groups = db.reduce((acc, o) => { (acc[o.p] = acc[o.p] || []).push(o); return acc; }, {});
+            let hB = "", hA = "", tAF = 0, tF = 0;
+
+            for (let proj in groups) {
+                let isB = billed.includes(proj), isA = archived.includes(proj);
+                let totalVal = groups[proj].reduce((s, o) => s + o.val, 0);
+                if(!isA) { if(isB) tF += totalVal; else tAF += totalVal; }
+                let clr = isB ? '#10b981' : '#3b82f6';
+                let rows = groups[proj].map(o => `
+                    <div class="row">
+                        <span style="font-size:11px; width:75px;">${o.d.split('-').reverse().join('/')}</span>
+                        <div style="flex:1; text-align:center;">
+                            <span style="font-weight:bold; font-size:11px;">${o.hStr}</span>
+                            ${o.dur > 0 ? `<span class="blue-hours">${o.dur.toFixed(2)}h</span>` : ''}
+                        </div>
+                        <div style="width:80px; text-align:right;">
+                            <b style="font-size:12px;">${o.val.toFixed(2)}€</b>
+                            <span onclick="delItem(${o.id})" style="margin-left:8px; cursor:pointer;">🗑️</span>
+                        </div>
+                    </div>`).join('');
+                
+                let card = `<div class="card" style="border-left:5px solid ${clr}">
+                    <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:10px;">
+                        <span>${proj}</span><span style="color:${clr};">${totalVal.toFixed(2)}€</span>
+                    </div>
+                    ${rows}
+                    <div class="grid" style="margin-top:10px;">
+                        ${isA ? `<div class="btn-sec" onclick="toggleArch('${proj}')">Réactiver</div>` : 
+                        `<div class="btn-sec" onclick="toggleBill('${proj}')" style="background:${isB?'#064e3b':'#334155'}; border:${isB?'1px solid #10b981':'none'}">${isB?'À FACTURER':'FACTURÉ'}</div>
+                         <div class="btn-sec" onclick="toggleArch('${proj}')" style="color:#60a5fa">ARCHIVER</div>`}
+                    </div>
+                </div>`;
+                if(isA) hA += card; else hB += card;
+            }
+            document.getElementById('list-bilan').innerHTML = hB || "Vide";
+            document.getElementById('list-archive').innerHTML = hA || "Vide";
+            document.getElementById('sum-af').innerText = tAF.toFixed(2) + "€";
+            document.getElementById('sum-f').innerText = tF.toFixed(2) + "€";
+        }
+
+        function delItem(id) { if(confirm("Supprimer ?")) { db = db.filter(x => x.id !== id); localStorage.setItem('PT61_DATA', JSON.stringify(db)); render(); } }
+        function toggleBill(p) { billed.includes(p) ? billed = billed.filter(x => x!==p) : billed.push(p); localStorage.setItem('PT61_BILL', JSON.stringify(billed)); render(); }
+        function toggleArch(p) { archived.includes(p) ? archived = archived.filter(x => x!==p) : archived.push(p); localStorage.setItem('PT61_ARCH', JSON.stringify(archived)); render(); }
+        function openSet() { document.getElementById('price-inputs').innerHTML = Object.keys(rates).map(k => `<label class="label">${k}</label><input type="number" id="rt-${k}" value="${rates[k]}" class="input">`).join(''); document.getElementById('set-modal').style.display = 'flex'; }
+        function closeSet() { Object.keys(rates).forEach(k => rates[k] = parseFloat(document.getElementById(`rt-${k}`).value)); localStorage.setItem('PT61_RATE', JSON.stringify(rates)); document.getElementById('set-modal').style.display = 'none'; render(); }
+
+        document.getElementById('in-date').valueAsDate = new Date();
+        render();
+    </script>
+</body>
+</html>
