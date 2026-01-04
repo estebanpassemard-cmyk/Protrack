@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ProTrack V59</title>
+    <title>ProTrack V60</title>
     <style>
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { 
             background: #0f172a; color: white; font-family: sans-serif; 
             margin: 0; padding-bottom: 90px;
@@ -84,10 +84,10 @@
     </div>
 
     <script>
-        let db = JSON.parse(localStorage.getItem('PT59_DATA') || '[]');
-        let billed = JSON.parse(localStorage.getItem('PT59_BILL') || '[]');
-        let archived = JSON.parse(localStorage.getItem('PT59_ARCH') || '[]');
-        let rates = JSON.parse(localStorage.getItem('PT59_RATE')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
+        let db = JSON.parse(localStorage.getItem('PT60_DATA') || '[]');
+        let billed = JSON.parse(localStorage.getItem('PT60_BILL') || '[]');
+        let archived = JSON.parse(localStorage.getItem('PT60_ARCH') || '[]');
+        let rates = JSON.parse(localStorage.getItem('PT60_RATE')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
 
         function goto(n) {
             document.getElementById('pg0').style.display = n === 0 ? 'block' : 'none';
@@ -129,17 +129,16 @@
             }
 
             db.unshift({ id: Date.now(), d, p, t, val, hStr, dur });
-            localStorage.setItem('PT59_DATA', JSON.stringify(db));
+            localStorage.setItem('PT60_DATA', JSON.stringify(db));
             ['in-proj','s1','e1','s2','e2'].forEach(id => document.getElementById(id).value = "");
             render();
-            alert("Enregistré");
+            // L'alerte de confirmation a été supprimée ici pour plus de fluidité
         }
 
         function render() {
             const projs = [...new Set(db.map(x => x.p))];
             document.getElementById('plist').innerHTML = projs.map(p => `<option value="${p}">`).join('');
 
-            // LISTE SAISIE (10 DERNIERS)
             document.getElementById('recent-list').innerHTML = db.slice(0, 10).map(o => `
                 <div class="card" style="border-left:4px solid #3b82f6; padding:12px;">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -156,55 +155,4 @@
                 </div>
             `).join('');
             
-            let groups = db.reduce((acc, o) => { (acc[o.p] = acc[o.p] || []).push(o); return acc; }, {});
-            let hB = "", hA = "", tAF = 0, tF = 0;
-
-            for (let proj in groups) {
-                let isB = billed.includes(proj), isA = archived.includes(proj);
-                let totalVal = groups[proj].reduce((s, o) => s + o.val, 0);
-                if(!isA) { if(isB) tF += totalVal; else tAF += totalVal; }
-                
-                let clr = isB ? '#10b981' : '#3b82f6';
-                let rows = groups[proj].map(o => `
-                    <div class="row">
-                        <span style="font-size:11px; width:75px;">${o.d.split('-').reverse().join('/')}</span>
-                        <div style="flex:1; text-align:center;">
-                            <span style="font-weight:bold; font-size:11px;">${o.hStr}</span>
-                            ${o.dur > 0 ? `<span class="blue-hours">${o.dur.toFixed(2)}h</span>` : ''}
-                        </div>
-                        <div style="width:80px; text-align:right;">
-                            <b style="font-size:12px;">${o.val.toFixed(2)}€</b>
-                            <span onclick="delItem(${o.id})" style="margin-left:8px; cursor:pointer;">🗑️</span>
-                        </div>
-                    </div>`).join('');
-                
-                let card = `<div class="card" style="border-left:5px solid ${clr}">
-                    <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:10px;">
-                        <span>${proj}</span><span style="color:${clr};">${totalVal.toFixed(2)}€</span>
-                    </div>
-                    ${rows}
-                    <div class="grid" style="margin-top:10px;">
-                        ${isA ? `<div class="btn-sec" onclick="toggleArch('${proj}')">Réactiver</div>` : 
-                        `<div class="btn-sec" onclick="toggleBill('${proj}')" style="background:${isB?'#064e3b':'#334155'}; border:${isB?'1px solid #10b981':'none'}">${isB?'À FACTURER':'FACTURÉ'}</div>
-                         <div class="btn-sec" onclick="toggleArch('${proj}')" style="color:#60a5fa">ARCHIVER</div>`}
-                    </div>
-                </div>`;
-                if(isA) hA += card; else hB += card;
-            }
-            document.getElementById('list-bilan').innerHTML = hB || "Aucune donnée";
-            document.getElementById('list-archive').innerHTML = hA || "Aucune archive";
-            document.getElementById('sum-af').innerText = tAF.toFixed(2) + "€";
-            document.getElementById('sum-f').innerText = tF.toFixed(2) + "€";
-        }
-
-        function delItem(id) { if(confirm("Supprimer ?")) { db = db.filter(x => x.id !== id); localStorage.setItem('PT59_DATA', JSON.stringify(db)); render(); } }
-        function toggleBill(p) { billed.includes(p) ? billed = billed.filter(x => x!==p) : billed.push(p); localStorage.setItem('PT59_BILL', JSON.stringify(billed)); render(); }
-        function toggleArch(p) { archived.includes(p) ? archived = archived.filter(x => x!==p) : archived.push(p); localStorage.setItem('PT59_ARCH', JSON.stringify(archived)); render(); }
-        function openSet() { document.getElementById('price-inputs').innerHTML = Object.keys(rates).map(k => `<label class="label">${k}</label><input type="number" id="rt-${k}" value="${rates[k]}" class="input">`).join(''); document.getElementById('set-modal').style.display = 'flex'; }
-        function closeSet() { Object.keys(rates).forEach(k => rates[k] = parseFloat(document.getElementById(`rt-${k}`).value)); localStorage.setItem('PT59_RATE', JSON.stringify(rates)); document.getElementById('set-modal').style.display = 'none'; render(); }
-
-        document.getElementById('in-date').valueAsDate = new Date();
-        render();
-    </script>
-</body>
-</html>
+            let groups
