@@ -1,39 +1,71 @@
-// COPIE SAUVEGARDE STRUCTURÉE
-        function copyData() {
-            // Regroupement par projet
-            let groups = db.reduce((acc, o) => {
-                (acc[o.p] = acc[o.p] || []).push(o);
-                return acc;
-            }, {});
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ProTrack V71 - HORAIRES FIXÉS</title>
+    <style>
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { background: #0f172a; color: white; font-family: sans-serif; margin: 0; padding-bottom: 90px; }
+        .nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: #1e293b; display: flex; border-top: 1px solid #475569; z-index: 9999; }
+        .nav-item { flex: 1; color: #64748b; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px; cursor: pointer; }
+        .nav-item.active { color: #3b82f6; border-top: 3px solid #3b82f6; background: rgba(59, 130, 246, 0.1); }
+        .page { display: none; padding: 15px; }
+        #pg0 { display: block; } 
+        .card { background: #1e293b; border-radius: 10px; padding: 15px; margin-bottom: 15px; border: 1px solid #334155; }
+        .input { background: #0f172a; border: 1px solid #475569; color: white; border-radius: 6px; padding: 12px; width: 100%; font-size: 16px; margin-bottom: 10px; display: block; }
+        .btn { background: #2563eb; color: white; padding: 15px; border-radius: 10px; font-weight: bold; width: 100%; border: none; font-size: 16px; cursor: pointer; }
+        .btn-save { background: #10b981; color: white; padding: 12px; border-radius: 8px; font-weight: bold; width: 100%; border: none; margin-bottom: 15px; cursor: pointer; }
+        .btn-sec { background: #334155; padding: 10px; font-size: 11px; color: white; border-radius: 5px; text-align: center; font-weight: bold; cursor: pointer; }
+        .label { font-size: 11px; color: #94a3b8; margin-bottom: 5px; display: block; text-transform: uppercase; }
+        .row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #334155; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .blue-hours { color: #3b82f6; font-weight: bold; font-size: 11px; }
+        .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:10000; padding:20px; align-items:center; }
+    </style>
+</head>
+<body>
 
-            let txt = "EXPORT PROTRACK - " + new Date().toLocaleDateString() + "\n";
-            txt += "==============================\n\n";
+    <div class="nav">
+        <div id="nv0" class="nav-item active" onclick="navigate(0)">Saisie</div>
+        <div id="nv1" class="nav-item" onclick="navigate(1)">Bilan</div>
+        <div id="nv2" class="nav-item" onclick="navigate(2)">Archives</div>
+    </div>
 
-            for (let proj in groups) {
-                txt += `PROJET : ${proj}\n`;
-                let totalProj = 0;
-                
-                groups[proj].forEach(o => {
-                    const dateFmt = formatDate(o.d);
-                    if (o.hStr === "FORFAIT") {
-                        // Pour les forfaits : affiche le type (Pige, OFF, etc)
-                        txt += `  [${dateFmt}] ${o.t} : ${o.val.toFixed(2)}€\n`;
-                    } else {
-                        // Pour la production/trajet : affiche horaires et total heures
-                        txt += `  [${dateFmt}] ${o.hStr} (${o.dur.toFixed(2)}h) : ${o.val.toFixed(2)}€\n`;
-                    }
-                    totalProj += o.val;
-                });
-                
-                txt += `TOTAL ${proj} : ${totalProj.toFixed(2)}€\n`;
-                txt += "------------------------------\n\n";
-            }
+    <div id="pg0" class="page">
+        <div onclick="openSet()" style="font-size:25px; margin-bottom:15px; cursor:pointer;">⚙️</div>
+        <div class="card">
+            <div class="grid"><input type="date" id="in-date" class="input"><input type="text" id="in-proj" placeholder="PROJET" class="input" list="plist"></div>
+            <datalist id="plist"></datalist>
+            <select id="in-type" class="input">
+                <option value="Production">Production</option><option value="Trajet">Trajet</option>
+                <option value="Pose Piges">Pose Piges</option><option value="Pose Omnes">Pose Omnes</option>
+                <option value="Jours OFF">Jours OFF</option>
+            </select>
+            <div class="grid">
+                <div><label class="label">Matin</label><input type="time" id="s1" class="input"><input type="time" id="e1" class="input"></div>
+                <div><label class="label">Aprem</label><input type="time" id="s2" class="input"><input type="time" id="e2" class="input"></div>
+            </div>
+            <button class="btn" onclick="saveData()">ENREGISTRER</button>
+        </div>
+        <div id="recent-list"></div>
+    </div>
 
-            const el = document.createElement('textarea');
-            el.value = txt; 
-            document.body.appendChild(el); 
-            el.select();
-            document.execCommand('copy'); 
-            document.body.removeChild(el);
-            // Pas d'alerte pour ne pas bloquer l'appli
-        }
+    <div id="pg1" class="page">
+        <button class="btn-save" onclick="copyData()">📤 SAUVEGARDER POUR NOTES</button>
+        <div class="grid" style="margin-bottom:15px;">
+            <div class="card" style="margin:0; text-align:center;"><div class="label">À Facturer</div><div id="sum-af" style="font-size:20px; font-weight:bold;">0€</div></div>
+            <div class="card" style="margin:0; text-align:center;"><div class="label" style="color:#10b981;">Facturé</div><div id="sum-f" style="font-size:20px; font-weight:bold; color:#10b981;">0€</div></div>
+        </div>
+        <div id="list-bilan"></div>
+    </div>
+
+    <div id="pg2" class="page"><div id="list-archive"></div></div>
+
+    <div id="set-modal" class="modal"><div class="card" style="width:100%;"><h3>Tarifs</h3><div id="price-inputs"></div><button class="btn" onclick="closeSet()">Fermer</button></div></div>
+
+    <script>
+        let db = JSON.parse(localStorage.getItem('PT61_DATA') || '[]');
+        let billed = JSON.parse(localStorage.getItem('PT61_BILL') || '[]');
+        let archived = JSON.parse(localStorage.getItem('PT61_ARCH') || '[]');
+        let rates = JSON.parse(localStorage.getItem('PT61_RATE')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off:
