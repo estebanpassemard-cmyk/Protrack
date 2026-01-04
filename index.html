@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrack V61-HF</title>
+    <title>ProTrack V61-BC</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background: #0f172a; color: white; font-family: sans-serif; margin: 0; padding-bottom: 90px; }
@@ -16,11 +16,11 @@
         .input { background: #0f172a; border: 1px solid #475569; color: white; border-radius: 6px; padding: 12px; width: 100%; font-size: 16px; margin-bottom: 10px; display: block; }
         .btn { background: #2563eb; color: white; padding: 15px; border-radius: 10px; font-weight: bold; width: 100%; border: none; font-size: 16px; }
         .btn-save { background: #10b981; color: white; padding: 12px; border-radius: 8px; font-weight: bold; width: 100%; border: none; margin-bottom: 15px; }
-        .btn-sec { background: #334155; padding: 10px; font-size: 11px; color: white; border-radius: 5px; text-align: center; text-transform: uppercase; font-weight: bold; }
+        .btn-sec { background: #334155; padding: 10px; font-size: 10px; color: white; border-radius: 5px; text-align: center; text-transform: uppercase; font-weight: bold; flex: 1; }
         .label { font-size: 11px; color: #94a3b8; margin-bottom: 5px; display: block; text-transform: uppercase; }
-        .row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #334155; }
+        .row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #334155; font-size: 11px; color: #cbd5e1; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .blue-hours { color: #3b82f6; font-weight: bold; font-size: 11px; }
+        .blue-h { color: #3b82f6; font-weight: bold; font-size: 10px; }
         .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:10000; padding:20px; align-items:center; }
     </style>
 </head>
@@ -52,10 +52,10 @@
     </div>
 
     <div id="pg1" class="page">
-        <button class="btn-save" onclick="copyData()">📤 SAUVEGARDER (PROJETS DÉTAILLÉS)</button>
+        <button class="btn-save" onclick="copyData()">📤 SAUVEGARDER (COPIER)</button>
         <div class="grid" style="margin-bottom:15px;">
-            <div class="card" style="margin:0; text-align:center;"><div class="label">À Facturer</div><div id="sum-af" style="font-size:20px; font-weight:bold;">0€</div></div>
-            <div class="card" style="margin:0; text-align:center;"><div class="label" style="color:#10b981;">Facturé</div><div id="sum-f" style="font-size:20px; font-weight:bold; color:#10b981;">0€</div></div>
+            <div class="card" style="margin:0; text-align:center;"><div class="label">À Facturer</div><div id="sum-af" style="font-size:18px; font-weight:bold;">0€</div></div>
+            <div class="card" style="margin:0; text-align:center;"><div class="label" style="color:#10b981;">Facturé</div><div id="sum-f" style="font-size:18px; font-weight:bold; color:#10b981;">0€</div></div>
         </div>
         <div id="list-bilan"></div>
     </div>
@@ -79,17 +79,13 @@
         function saveData() {
             const d = document.getElementById('in-date').value, p = document.getElementById('in-proj').value.toUpperCase() || "DIVERS", t = document.getElementById('in-type').value;
             if(!d) return alert("Date ?");
-            
             const toM = (v) => { if(!v) return 0; const s = v.split(':'); return parseInt(s[0])*60+parseInt(s[1]); };
             const s1=toM(document.getElementById('s1').value), e1=toM(document.getElementById('e1').value), s2=toM(document.getElementById('s2').value), e2=toM(document.getElementById('e2').value);
-            
             let val=0, hStr="", dur=0;
             if(t.includes('Pose')||t==='Jours OFF') {
-                val=t==='Pose Piges'?rates.piges:(t==='Pose Omnes'?rates.omnes:rates.off);
-                hStr="FORFAIT";
+                val=t==='Pose Piges'?rates.piges:(t==='Pose Omnes'?rates.omnes:rates.off); hStr="FORFAIT";
             } else {
-                let m1 = (e1 > s1) ? (e1 - s1) : 0;
-                let m2 = (e2 > s2) ? (e2 - s2) : 0;
+                let m1 = (e1 > s1) ? (e1 - s1) : 0; let m2 = (e2 > s2) ? (e2 - s2) : 0;
                 dur = (m1 + m2) / 60;
                 let t1 = m1 > 0 ? document.getElementById('s1').value+"-"+document.getElementById('e1').value : "";
                 let t2 = m2 > 0 ? document.getElementById('s2').value+"-"+document.getElementById('e2').value : "";
@@ -104,14 +100,11 @@
 
         function copyData() {
             let groups = db.reduce((acc, o) => { (acc[o.p] = acc[o.p] || []).push(o); return acc; }, {});
-            let txt = "SAUVEGARDE PROTRACK\n====================\n\n";
+            let txt = "EXPORT PROTRACK\n\n";
             for (let proj in groups) {
-                txt += "PROJET : " + proj + "\n";
-                groups[proj].forEach(o => {
-                    let dFmt = o.d.split('-').reverse().join('/');
-                    txt += `  [${dFmt}] ${o.hStr}${o.dur>0 ? " ("+o.dur.toFixed(2)+"h)" : ""} : ${o.val.toFixed(2)}€\n`;
-                });
-                txt += "--------------------\n\n";
+                txt += proj + " :\n";
+                groups[proj].forEach(o => { txt += `- ${o.d.split('-').reverse().join('/')} [${o.hStr}] : ${o.val.toFixed(2)}€\n`; });
+                txt += "\n";
             }
             const el = document.createElement('textarea'); el.value = txt; document.body.appendChild(el); el.select();
             document.execCommand('copy'); document.body.removeChild(el);
@@ -123,19 +116,37 @@
             document.getElementById('recent-list').innerHTML = db.slice(0, 10).map(o => `
                 <div class="card" style="border-left:4px solid #3b82f6; padding:12px;">
                     <div style="display:flex; justify-content:space-between;"><b>${o.p}</b><div><b>${o.val.toFixed(2)}€</b> <span onclick="delItem(${o.id})">🗑️</span></div></div>
-                    <div style="font-size:11px; color:#94a3b8; margin-top:5px;">${o.d.split('-').reverse().join('/')} - ${o.hStr} ${o.dur>0 ? "("+o.dur.toFixed(2)+"h)" : ""}</div>
+                    <div style="font-size:11px; color:#94a3b8; margin-top:5px;">${o.d.split('-').reverse().join('/')} - ${o.hStr}</div>
                 </div>`).join('');
+            
             let hB="", hA="", tAF=0, tF=0, groups=db.reduce((acc,o)=>{(acc[o.p]=acc[o.p]||[]).push(o);return acc;},{});
             for(let proj in groups) {
                 let isB=billed.includes(proj), isA=archived.includes(proj), total=groups[proj].reduce((s,o)=>s+o.val,0);
                 if(!isA){ if(isB) tF+=total; else tAF+=total; }
                 let clr=isB?'#10b981':'#3b82f6';
-                let card = `<div class="card" style="border-left:5px solid ${clr}"><div style="display:flex;justify-content:space-between;font-weight:bold;"><span>${proj}</span><span style="color:${clr};">${total.toFixed(2)}€</span></div>
-                <div class="grid" style="margin-top:10px;">${isA?`<div class="btn-sec" onclick="toggleArch('${proj}')">Réactiver</div>`:`<div class="btn-sec" onclick="toggleBill('${proj}')" style="background:${isB?'#064e3b':'#334155'}">${isB?'À FACTURER':'FACTURÉ'}</div><div class="btn-sec" onclick="toggleArch('${proj}')" style="color:#60a5fa">ARCHIVER</div>`}</div></div>`;
+                
+                // Détail des lignes dans la carte
+                let lines = groups[proj].map(o => `
+                    <div class="row">
+                        <span>${o.d.split('-').reverse().join('/')}</span>
+                        <span style="flex:1; text-align:center;">${o.hStr} ${o.dur>0 ? `<span class="blue-h">(${o.dur.toFixed(2)}h)</span>`:''}</span>
+                        <span style="font-weight:bold;">${o.val.toFixed(2)}€</span>
+                    </div>`).join('');
+
+                let card = `<div class="card" style="border-left:5px solid ${clr}">
+                    <div style="display:flex;justify-content:space-between;font-weight:bold;margin-bottom:10px;"><span>${proj}</span><span style="color:${clr};">${total.toFixed(2)}€</span></div>
+                    ${lines}
+                    <div style="display:flex; gap:10px; margin-top:12px;">
+                        <div class="btn-sec" onclick="toggleBill('${proj}')" style="background:${isB?'#064e3b':'#334155'}">${isB?'À FACTURER':'FACTURÉ'}</div>
+                        ${!isA ? `<div class="btn-sec" onclick="toggleArch('${proj}')" style="color:#60a5fa">ARCHIVER</div>` : `<div class="btn-sec" onclick="toggleArch('${proj}')">RÉACTIVER</div>`}
+                    </div>
+                </div>`;
                 if(isA) hA+=card; else hB+=card;
             }
-            document.getElementById('list-bilan').innerHTML=hB; document.getElementById('list-archive').innerHTML=hA;
-            document.getElementById('sum-af').innerText=tAF.toFixed(2)+"€"; document.getElementById('sum-f').innerText=tF.toFixed(2)+"€";
+            document.getElementById('list-bilan').innerHTML=hB || "Aucune donnée";
+            document.getElementById('list-archive').innerHTML=hA || "Vide";
+            document.getElementById('sum-af').innerText=tAF.toFixed(2)+"€";
+            document.getElementById('sum-f').innerText=tF.toFixed(2)+"€";
         }
 
         function delItem(id) { if(confirm("Supprimer ?")) { db=db.filter(x=>x.id!==id); localStorage.setItem('PT61_DATA',JSON.stringify(db)); render(); } }
