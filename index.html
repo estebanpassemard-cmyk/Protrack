@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrack Fixed</title>
+    <title>ProTrack V24</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; }
         body { background-color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif; color: #f8fafc; margin: 0; padding: 0; overflow: hidden; }
         
-        /* Conteneur principal avec SNAP */
         .app-viewport {
             display: flex;
             width: 100vw;
@@ -22,9 +21,8 @@
         }
         .app-viewport::-webkit-scrollbar { display: none; }
         
-        /* Chaque page fait exactement la largeur de l'écran */
         .page {
-            flex: 0 0 100vw; /* Force la largeur à 100% de l'écran */
+            flex: 0 0 100vw;
             width: 100vw;
             height: 100vh;
             scroll-snap-align: start;
@@ -37,7 +35,6 @@
         .btn-primary { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
         .facture-true { border-left: 5px solid #ef4444 !important; opacity: 0.6; }
 
-        /* Navigation Basse */
         .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 75px; background: #0f172a; border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-around; align-items: center; z-index: 100; }
         .nav-item { font-size: 10px; font-weight: 800; color: #475569; text-transform: uppercase; }
         .nav-item.active { color: #3b82f6; }
@@ -50,7 +47,7 @@
         <div class="page" id="p0">
             <div class="flex justify-between items-center mb-6">
                 <button onclick="toggleSettings(true)" class="w-10 h-10 glass-card flex items-center justify-center text-xs opacity-50">⚙️</button>
-                <div class="text-[9px] font-black uppercase text-slate-500 italic">Saisie Rapide</div>
+                <div class="text-[9px] font-black uppercase text-slate-500 italic">Saisie</div>
             </div>
 
             <div class="glass-card p-5 mb-8">
@@ -82,7 +79,7 @@
                     <button onclick="addEntry()" class="w-full btn-primary py-4 rounded-xl font-black text-xs uppercase tracking-widest text-white mt-2">Enregistrer</button>
                 </div>
             </div>
-            <h3 class="text-[9px] font-black text-slate-600 uppercase mb-4 italic">Dernières entrées</h3>
+            <h3 class="text-[9px] font-black text-slate-600 uppercase mb-4 italic pl-1">Activités récentes</h3>
             <div id="recent-logs" class="space-y-3"></div>
         </div>
 
@@ -90,11 +87,11 @@
             <h2 class="font-black text-xs uppercase italic tracking-widest text-center mb-6">Bilan En Cours</h2>
             <div class="grid grid-cols-2 gap-3 mb-6">
                 <div class="bg-blue-600/10 p-4 rounded-xl border border-blue-500/20 text-center">
-                    <p class="text-[8px] font-bold text-blue-400 uppercase mb-1">À Facturer</p>
+                    <p class="text-[8px] font-bold text-blue-400 uppercase mb-1 italic">À Facturer</p>
                     <p id="total-pending" class="text-lg font-black text-blue-400">0.00 €</p>
                 </div>
                 <div class="bg-red-600/10 p-4 rounded-xl border border-red-500/20 text-center">
-                    <p class="text-[8px] font-bold text-red-400 uppercase mb-1">Facturé</p>
+                    <p class="text-[8px] font-bold text-red-400 uppercase mb-1 italic">Facturé</p>
                     <p id="total-billed" class="text-lg font-black text-red-400">0.00 €</p>
                 </div>
             </div>
@@ -103,7 +100,7 @@
         </div>
 
         <div class="page" id="p2">
-            <h2 class="font-black text-xs uppercase italic tracking-widest text-center mb-6 text-slate-500">Projets Archivés</h2>
+            <h2 class="font-black text-xs uppercase italic tracking-widest text-center mb-6 text-slate-500">Archives</h2>
             <div id="table-archive" class="space-y-4"></div>
             <div class="mt-8 flex gap-2">
                 <button onclick="copyToClipboard('archive')" class="flex-grow bg-white/5 text-white py-4 rounded-xl text-[9px] font-bold uppercase">Copier Archives</button>
@@ -123,16 +120,21 @@
         <div class="glass-card w-full p-6 max-w-sm">
             <h2 class="text-center font-bold mb-8 uppercase text-xs italic tracking-widest">Tarification</h2>
             <div class="space-y-5" id="settings-list"></div>
-            <button onclick="saveSettings()" class="w-full btn-primary text-white py-4 rounded-xl font-bold mt-8 uppercase">Valider</button>
+            <button onclick="saveSettings()" class="w-full btn-primary text-white py-4 rounded-xl font-bold mt-8">VALIDER</button>
             <button onclick="toggleSettings(false)" class="w-full text-slate-600 text-[10px] mt-4 text-center font-bold uppercase">Fermer</button>
         </div>
     </div>
 
     <script>
-        let settings = JSON.parse(localStorage.getItem('pro_settings_v23')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
+        // Utilisation d'une clé unique constante pour éviter les bugs de versioning
+        const STORAGE_KEY = 'pro_data_final';
+        const SETTINGS_KEY = 'pro_settings_final';
+        const BILLED_KEY = 'pro_billed_final';
+        const ARCHIVED_KEY = 'pro_archived_final';
+
+        let settings = JSON.parse(localStorage.getItem(SETTINGS_KEY)) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
         document.getElementById('date').valueAsDate = new Date();
 
-        // Navigation
         const vp = document.getElementById('viewport');
         function jump(i) { vp.scrollTo({ left: i * window.innerWidth, behavior: 'smooth' }); }
         
@@ -158,7 +160,7 @@
 
         function saveSettings() {
             Object.keys(settings).forEach(k => settings[k] = parseFloat(document.getElementById(`price-${k}`).value));
-            localStorage.setItem('pro_settings_v23', JSON.stringify(settings)); toggleSettings(false); render();
+            localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); toggleSettings(false); render();
         }
 
         function addEntry() {
@@ -167,7 +169,18 @@
             const m = (ts) => { if(!ts) return null; const [h, mi] = ts.split(':'); return parseInt(h)*60 + parseInt(mi); };
 
             if (type.includes('Pose') || type === 'Jours OFF') {
-                val = settings[type === 'Pose Piges' ? 'piges' : (type === 'Pose Omnes' ? 'omnes' : 'off')]; detail = "FORFAIT";
+                val = settings[type === 'Pose Piges' ? 'piges' : (type === 'Pose Omnes' ? 'omnes' : 'off')]; 
+                detail = "FORFAIT";
             } else {
                 const ms1 = m(document.getElementById('start1').value), me1 = m(document.getElementById('end1').value);
-                const ms2 = m(document.getElementById('start2').value), me
+                const ms2 = m(document.getElementById('start2').value), me2 = m(document.getElementById('end2').value);
+                let t = 0;
+                if(ms1 !== null && me2 !== null && me1 === null && ms2 === null) {
+                    t = me2 - ms1; detail = `${document.getElementById('start1').value} > ${document.getElementById('end2').value}`;
+                } else {
+                    t = ((ms1!==null && me1!==null) ? (me1-ms1) : 0) + ((ms2!==null && me2!==null) ? (me2-ms2) : 0);
+                    detail = (document.getElementById('start1').value?document.getElementById('start1').value+'-'+document.getElementById('end1').value:'') + (document.getElementById('start2').value?' / '+document.getElementById('start2').value+'-'+document.getElementById('end2').value:'');
+                }
+                if(t <= 0) return alert("Vérifie les heures");
+                val = (t/60) * (type === 'Production' ? settings.prod : settings.trajet);
+                detail += ` (${Math.floor(t/60)}h${(t%60).toString().
