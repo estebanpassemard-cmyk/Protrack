@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrack V61</title>
+    <title>ProTrack V61-HF</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background: #0f172a; color: white; font-family: sans-serif; margin: 0; padding-bottom: 90px; }
@@ -20,6 +20,7 @@
         .label { font-size: 11px; color: #94a3b8; margin-bottom: 5px; display: block; text-transform: uppercase; }
         .row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #334155; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .blue-hours { color: #3b82f6; font-weight: bold; font-size: 11px; }
         .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:10000; padding:20px; align-items:center; }
     </style>
 </head>
@@ -51,7 +52,7 @@
     </div>
 
     <div id="pg1" class="page">
-        <button class="btn-save" onclick="copyData()">📤 SAUVEGARDER (COPIER)</button>
+        <button class="btn-save" onclick="copyData()">📤 SAUVEGARDER (PROJETS DÉTAILLÉS)</button>
         <div class="grid" style="margin-bottom:15px;">
             <div class="card" style="margin:0; text-align:center;"><div class="label">À Facturer</div><div id="sum-af" style="font-size:20px; font-weight:bold;">0€</div></div>
             <div class="card" style="margin:0; text-align:center;"><div class="label" style="color:#10b981;">Facturé</div><div id="sum-f" style="font-size:20px; font-weight:bold; color:#10b981;">0€</div></div>
@@ -70,25 +71,31 @@
         let rates = JSON.parse(localStorage.getItem('PT61_RATE')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
 
         function navigate(n) {
-            const pages = ['pg0', 'pg1', 'pg2'];
-            const navs = ['nv0', 'nv1', 'nv2'];
-            for(let i=0; i<3; i++) {
-                document.getElementById(pages[i]).style.display = (i === n) ? 'block' : 'none';
-                document.getElementById(navs[i]).className = (i === n) ? 'nav-item active' : 'nav-item';
-            }
+            ['pg0','pg1','pg2'].forEach((id,i)=>document.getElementById(id).style.display=(i===n)?'block':'none');
+            ['nv0','nv1','nv2'].forEach((id,i)=>document.getElementById(id).className=(i===n)?'nav-item active':'nav-item');
             render();
         }
 
         function saveData() {
-            const d = document.getElementById('in-date').value;
-            const p = document.getElementById('in-proj').value.toUpperCase() || "DIVERS";
-            const t = document.getElementById('in-type').value;
+            const d = document.getElementById('in-date').value, p = document.getElementById('in-proj').value.toUpperCase() || "DIVERS", t = document.getElementById('in-type').value;
             if(!d) return alert("Date ?");
-            const toM = (v) => { if(!v) return 0; const [h,m] = v.split(':'); return parseInt(h)*60+parseInt(m); };
+            
+            const toM = (v) => { if(!v) return 0; const s = v.split(':'); return parseInt(s[0])*60+parseInt(s[1]); };
             const s1=toM(document.getElementById('s1').value), e1=toM(document.getElementById('e1').value), s2=toM(document.getElementById('s2').value), e2=toM(document.getElementById('e2').value);
+            
             let val=0, hStr="", dur=0;
-            if(t.includes('Pose')||t==='Jours OFF') { val=t==='Pose Piges'?rates.piges:(t==='Pose Omnes'?rates.omnes:rates.off); hStr="FORFAIT"; }
-            else { dur=((e1-s1)+(e2-s2))/60; hStr=(s1<e1?document.getElementById('s1').value+"-"+document.getElementById('e1').value:"")+(s2<e2?" / "+document.getElementById('s2').value+"-"+document.getElementById('e2').value:""); val=dur*(t==='Production'?rates.prod:rates.trajet); }
+            if(t.includes('Pose')||t==='Jours OFF') {
+                val=t==='Pose Piges'?rates.piges:(t==='Pose Omnes'?rates.omnes:rates.off);
+                hStr="FORFAIT";
+            } else {
+                let m1 = (e1 > s1) ? (e1 - s1) : 0;
+                let m2 = (e2 > s2) ? (e2 - s2) : 0;
+                dur = (m1 + m2) / 60;
+                let t1 = m1 > 0 ? document.getElementById('s1').value+"-"+document.getElementById('e1').value : "";
+                let t2 = m2 > 0 ? document.getElementById('s2').value+"-"+document.getElementById('e2').value : "";
+                hStr = (t1 && t2) ? t1 + " / " + t2 : (t1 || t2 || "00:00");
+                val = dur * (t === 'Production' ? rates.prod : rates.trajet);
+            }
             db.unshift({id:Date.now(), d, p, t, val, hStr, dur});
             localStorage.setItem('PT61_DATA', JSON.stringify(db));
             ['in-proj','s1','e1','s2','e2'].forEach(id => document.getElementById(id).value = "");
@@ -96,12 +103,19 @@
         }
 
         function copyData() {
-            let txt = "SAUVEGARDE PROTRACK\n\n";
-            db.forEach(o => { txt += `${o.d} | ${o.p} | ${o.val.toFixed(2)}€\n`; });
-            const el = document.createElement('textarea');
-            el.value = txt; document.body.appendChild(el); el.select();
+            let groups = db.reduce((acc, o) => { (acc[o.p] = acc[o.p] || []).push(o); return acc; }, {});
+            let txt = "SAUVEGARDE PROTRACK\n====================\n\n";
+            for (let proj in groups) {
+                txt += "PROJET : " + proj + "\n";
+                groups[proj].forEach(o => {
+                    let dFmt = o.d.split('-').reverse().join('/');
+                    txt += `  [${dFmt}] ${o.hStr}${o.dur>0 ? " ("+o.dur.toFixed(2)+"h)" : ""} : ${o.val.toFixed(2)}€\n`;
+                });
+                txt += "--------------------\n\n";
+            }
+            const el = document.createElement('textarea'); el.value = txt; document.body.appendChild(el); el.select();
             document.execCommand('copy'); document.body.removeChild(el);
-            alert("Copié dans le presse-papier !");
+            alert("Copié !");
         }
 
         function render() {
@@ -109,7 +123,7 @@
             document.getElementById('recent-list').innerHTML = db.slice(0, 10).map(o => `
                 <div class="card" style="border-left:4px solid #3b82f6; padding:12px;">
                     <div style="display:flex; justify-content:space-between;"><b>${o.p}</b><div><b>${o.val.toFixed(2)}€</b> <span onclick="delItem(${o.id})">🗑️</span></div></div>
-                    <div style="font-size:11px; color:#94a3b8; margin-top:5px;">${o.d} - ${o.hStr}</div>
+                    <div style="font-size:11px; color:#94a3b8; margin-top:5px;">${o.d.split('-').reverse().join('/')} - ${o.hStr} ${o.dur>0 ? "("+o.dur.toFixed(2)+"h)" : ""}</div>
                 </div>`).join('');
             let hB="", hA="", tAF=0, tF=0, groups=db.reduce((acc,o)=>{(acc[o.p]=acc[o.p]||[]).push(o);return acc;},{});
             for(let proj in groups) {
