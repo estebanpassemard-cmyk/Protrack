@@ -3,215 +3,239 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrack V27</title>
+    <title>ProTrack Premium</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        body { background: #0f172a; color: white; font-family: sans-serif; margin: 0; overflow: hidden; }
-        .viewport { display: flex; width: 100vw; height: 100vh; overflow-x: auto; scroll-snap-type: x mandatory; }
-        .page { flex: 0 0 100vw; width: 100vw; height: 100vh; scroll-snap-align: start; overflow-y: auto; padding: 20px 20px 100px 20px; }
-        .card { background: #1e293b; border-radius: 12px; padding: 15px; margin-bottom: 15px; border: 1px solid #334155; }
-        input, select { background: #0f172a; color: white; border: 1px solid #475569; padding: 12px; border-radius: 8px; width: 100%; font-size: 16px !important; margin-top: 5px; }
-        .btn-blue { background: #2563eb; color: white; padding: 15px; border-radius: 10px; width: 100%; border: none; font-weight: bold; margin-top: 10px; }
-        .nav { position: fixed; bottom: 0; width: 100%; height: 70px; background: #1e293b; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #334155; z-index: 100; }
-        .nav-item { color: #64748b; font-size: 11px; font-weight: bold; text-transform: uppercase; }
-        .nav-item.active { color: #3b82f6; border-bottom: 2px solid #3b82f6; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { background-color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif; color: #f8fafc; margin: 0; overflow: hidden; height: 100vh; }
+        
+        .app-viewport { display: flex; width: 100vw; height: 100vh; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; }
+        .app-viewport::-webkit-scrollbar { display: none; }
+        
+        .page { flex: 0 0 100vw; width: 100vw; height: 100vh; scroll-snap-align: start; overflow-y: auto; padding: 20px 20px 120px 20px; }
+
+        .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; }
+        .input-field { background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 12px; padding: 12px; font-size: 16px !important; width: 100%; }
+        .btn-primary { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
+        .facture-true { border-left: 5px solid #ef4444 !important; opacity: 0.7; }
+
+        .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 80px; background: rgba(15, 23, 42, 0.95); border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-around; align-items: center; z-index: 100; }
+        .nav-item { font-size: 10px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 1px; }
+        .nav-item.active { color: #3b82f6; }
     </style>
 </head>
 <body>
 
-<div class="viewport" id="viewport">
-    <div class="page">
-        <h2 style="font-weight: 900; color: #3b82f6; margin-bottom: 15px;">1. SAISIE</h2>
-        <div class="card">
-            <input type="date" id="date">
-            <input type="text" id="project" placeholder="NOM DU PROJET">
-            <select id="type">
-                <option value="Production">Production (25€/h)</option>
-                <option value="Trajet">Trajet (20€/h)</option>
-                <option value="Pose Piges">Pose Piges (350€)</option>
-                <option value="Pose Omnes">Pose Omnes (300€)</option>
-                <option value="Jours OFF">Jours OFF (100€)</option>
-            </select>
-            <div id="hours-group" style="margin-top:10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <input type="time" id="s1" placeholder="Début">
-                <input type="time" id="e1" placeholder="Fin">
-                <input type="time" id="s2">
-                <input type="time" id="e2">
-            </div>
-            <button id="saveBtn" class="btn-blue">ENREGISTRER MAINTENANT</button>
-        </div>
-
-        <div id="recent-list"></div>
-
-        <h3 style="color:#64748b; font-size:12px; margin-top:30px;">TARIFS (MODIFIABLES)</h3>
-        <div class="card" style="font-size:12px; opacity:0.8;">
-            Prod: <input type="number" id="p_prod" value="25" style="width:60px; padding:4px;"> 
-            Trajet: <input type="number" id="p_trajet" value="20" style="width:60px; padding:4px;">
-            Piges: <input type="number" id="p_piges" value="350" style="width:60px; padding:4px;">
-        </div>
-    </div>
-
-    <div class="page">
-        <h2 style="font-weight: 900; color: #3b82f6; margin-bottom: 15px;">2. BILAN</h2>
-        <div style="display: flex; gap:10px; margin-bottom:15px;">
-            <div class="card" style="flex:1; text-align:center;">
-                <small>A FACTURER</small><br><b id="total-af" style="color:#3b82f6">0€</b>
-            </div>
-            <div class="card" style="flex:1; text-align:center;">
-                <small>FACTURE</small><br><b id="total-f" style="color:#ef4444">0€</b>
-            </div>
-        </div>
-        <div id="bilan-list"></div>
-        <button id="copyBilan" class="btn-blue" style="background:#475569">COPIER POUR NOTES</button>
-    </div>
-
-    <div class="page">
-        <h2 style="font-weight: 900; color: #64748b; margin-bottom: 15px;">3. ARCHIVES</h2>
-        <div id="archive-list"></div>
-        <button id="copyArchive" class="btn-blue" style="background:#475569">COPIER ARCHIVES</button>
-    </div>
-</div>
-
-<nav class="nav">
-    <div class="nav-item active" id="n0">SAISIE</div>
-    <div class="nav-item" id="n1">BILAN</div>
-    <div class="nav-item" id="n2">ARCHIVES</div>
-</nav>
-
-<script>
-    // Initialisation forcée
-    let data = JSON.parse(localStorage.getItem('pt_data_v27') || '[]');
-    let billed_projects = JSON.parse(localStorage.getItem('pt_billed_v27') || '[]');
-    let archived_projects = JSON.parse(localStorage.getItem('pt_archived_v27') || '[]');
-
-    document.getElementById('date').valueAsDate = new Date();
-
-    // Rendu de l'application
-    function render() {
-        const recent = document.getElementById('recent-list');
-        const bilan = document.getElementById('bilan-list');
-        const archive = document.getElementById('archive-list');
+    <div class="app-viewport" id="vp">
         
-        recent.innerHTML = '<small style="color:#475569">HISTORIQUE RÉCENT</small>';
-        bilan.innerHTML = '';
-        archive.innerHTML = '';
+        <div class="page">
+            <div class="flex justify-between items-center mb-6">
+                <button id="openSettings" class="w-10 h-10 glass-card flex items-center justify-center text-xs opacity-50">⚙️</button>
+                <div class="text-[9px] font-black uppercase text-slate-500 tracking-widest italic">Saisie Rapide</div>
+            </div>
 
-        let tAF = 0, tF = 0;
+            <div class="glass-card p-5 mb-8">
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="date" id="date" class="input-field">
+                        <input type="text" id="project" class="input-field" placeholder="Projet" list="project-list">
+                    </div>
+                    <datalist id="project-list"></datalist>
+                    <select id="type" class="input-field font-bold text-blue-400">
+                        <option value="Production">Production</option>
+                        <option value="Trajet">Trajet</option>
+                        <option value="Pose Piges">Pose Piges</option>
+                        <option value="Pose Omnes">Pose Omnes</option>
+                        <option value="Jours OFF">Jours OFF</option>
+                    </select>
+                    <div id="hour-inputs" class="space-y-4 pt-2">
+                        <div class="grid grid-cols-2 gap-2 text-[9px] font-bold text-slate-500 italic uppercase">
+                            <span>Début</span><span>Fin</span>
+                            <input type="time" id="s1" class="input-field">
+                            <input type="time" id="e1" class="input-field">
+                            <input type="time" id="s2" class="input-field">
+                            <input type="time" id="e2" class="input-field">
+                        </div>
+                    </div>
+                    <button id="saveBtn" class="w-full btn-primary py-4 rounded-xl font-black text-xs uppercase tracking-widest text-white shadow-xl">Enregistrer</button>
+                </div>
+            </div>
+            <h3 class="text-[10px] font-black text-slate-600 uppercase mb-4 italic pl-1">Activités récentes</h3>
+            <div id="recent-logs" class="space-y-3"></div>
+        </div>
 
-        // Groupement par projet
-        let projects = data.reduce((acc, item) => {
-            acc[item.project] = acc[item.project] || [];
-            acc[item.project].push(item);
-            return acc;
-        }, {});
+        <div class="page">
+            <h2 class="font-black text-xs uppercase italic tracking-widest text-center mb-6">Bilan Global</h2>
+            <div class="grid grid-cols-2 gap-3 mb-6">
+                <div class="bg-blue-600/10 p-4 rounded-xl border border-blue-500/20 text-center">
+                    <p class="text-[8px] font-bold text-blue-400 uppercase mb-1">En cours</p>
+                    <p id="total-p" class="text-lg font-black text-blue-400">0.00 €</p>
+                </div>
+                <div class="bg-red-600/10 p-4 rounded-xl border border-red-500/20 text-center">
+                    <p class="text-[8px] font-bold text-red-400 uppercase mb-1">Facturé</p>
+                    <p id="total-b" class="text-lg font-black text-red-400">0.00 €</p>
+                </div>
+            </div>
+            <div id="list-bilan" class="space-y-4"></div>
+            <button id="copyBilan" class="w-full bg-white/5 text-white py-4 rounded-xl text-[9px] font-bold uppercase mt-8">Copier Bilan (Notes)</button>
+        </div>
 
-        // Affichage Accueil (5 derniers)
-        data.slice(0,5).forEach(item => {
-            recent.innerHTML += `<div class="card" style="font-size:12px; margin-top:5px;">
-                <b>${item.project}</b> | ${item.val.toFixed(2)}€ | <small>${item.type}</small>
-            </div>`;
+        <div class="page">
+            <h2 class="font-black text-xs uppercase italic tracking-widest text-center mb-6 text-slate-500">Archives</h2>
+            <div id="list-archive" class="space-y-4"></div>
+            <button id="copyArchive" class="w-full bg-white/5 text-white py-4 rounded-xl text-[9px] font-bold uppercase mt-8">Copier Archives</button>
+        </div>
+
+    </div>
+
+    <nav class="nav-bar">
+        <div onclick="jump(0)" class="nav-item active" id="n0">Saisie</div>
+        <div onclick="jump(1)" class="nav-item" id="n1">Bilan</div>
+        <div onclick="jump(2)" class="nav-item" id="n2">Archives</div>
+    </nav>
+
+    <div id="settingsModal" class="hidden fixed inset-0 bg-black/95 flex items-center justify-center p-6 z-[200]">
+        <div class="glass-card w-full p-6 max-w-sm">
+            <h2 class="text-center font-bold mb-8 uppercase text-xs italic tracking-widest">Tarification</h2>
+            <div class="space-y-4" id="prices-list"></div>
+            <button id="closeSettings" class="w-full btn-primary text-white py-4 rounded-xl font-bold mt-8 uppercase text-xs">Valider</button>
+        </div>
+    </div>
+
+    <script>
+        let db = JSON.parse(localStorage.getItem('PT_DB_V28') || '[]');
+        let billed = JSON.parse(localStorage.getItem('PT_B_V28') || '[]');
+        let archived = JSON.parse(localStorage.getItem('PT_A_V28') || '[]');
+        let prices = JSON.parse(localStorage.getItem('PT_PRICES')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
+
+        document.getElementById('date').valueAsDate = new Date();
+
+        const vp = document.getElementById('vp');
+        function jump(i) { vp.scrollTo({ left: i * window.innerWidth, behavior: 'smooth' }); }
+        
+        vp.addEventListener('scroll', () => {
+            const i = Math.round(vp.scrollLeft / window.innerWidth);
+            document.querySelectorAll('.nav-item').forEach((el, idx) => el.classList.toggle('active', i === idx));
         });
 
-        // Affichage Bilan & Archive
-        for (let pName in projects) {
-            let sum = projects[pName].reduce((s, i) => s + i.val, 0);
-            let isBilled = billed_projects.includes(pName);
-            let isArchived = archived_projects.includes(pName);
+        // Gestion Réglages
+        document.getElementById('openSettings').onclick = () => {
+            const list = document.getElementById('prices-list');
+            const labels = { prod: 'Prod (€/h)', trajet: 'Trajet (€/h)', piges: 'Piges (€)', omnes: 'Omnes (€)', off: 'OFF (€)' };
+            list.innerHTML = Object.keys(prices).map(k => `
+                <div class="flex justify-between items-center"><label class="text-[10px] uppercase font-bold text-slate-400">${labels[k]}</label>
+                <input type="number" id="p-${k}" value="${prices[k]}" class="input-field w-24 text-right"></div>
+            `).join('');
+            document.getElementById('settingsModal').classList.remove('hidden');
+        };
 
-            if (!isArchived) {
-                if (isBilled) tF += sum; else tAF += sum;
+        document.getElementById('closeSettings').onclick = () => {
+            Object.keys(prices).forEach(k => prices[k] = parseFloat(document.getElementById(`p-${k}`).value));
+            localStorage.setItem('PT_PRICES', JSON.stringify(prices));
+            document.getElementById('settingsModal').classList.add('hidden');
+            render();
+        };
+
+        // Sauvegarde (SANS ALERTE)
+        document.getElementById('saveBtn').onclick = () => {
+            const date = document.getElementById('date').value;
+            const project = document.getElementById('project').value.toUpperCase() || "DIVERS";
+            const type = document.getElementById('type').value;
+            if(!date) return;
+
+            let val = 0;
+            let info = "";
+            const toM = (id) => { const v = document.getElementById(id).value; if(!v) return null; const [h,m] = v.split(':'); return parseInt(h)*60 + parseInt(m); };
+
+            if(type.includes('Pose') || type === 'Jours OFF') {
+                val = type === 'Pose Piges' ? prices.piges : (type === 'Pose Omnes' ? prices.omnes : prices.off);
+                info = "FORFAIT";
+            } else {
+                let m1 = (toM('e1') - toM('s1')), m2 = (toM('e2') - toM('s2'));
+                let totalMin = (m1 > 0 ? m1 : 0) + (m2 > 0 ? m2 : 0);
+                if(totalMin <= 0) return;
+                val = (totalMin/60) * (type === 'Production' ? prices.prod : prices.trajet);
+                info = Math.floor(totalMin/60) + "h" + (totalMin%60).toString().padStart(2,'0');
             }
 
-            let cardHtml = `
-                <div class="card" style="${isBilled && !isArchived ? 'border-left:4px solid #ef4444' : ''}">
-                    <div style="display:flex; justify-content:space-between;">
-                        <b>${pName}</b> <span>${sum.toFixed(2)}€</span>
-                    </div>
-                    <div style="margin-top:10px; display:flex; gap:10px;">
-                        <button onclick="cmd('bill','${pName.replace(/'/g,"\\'")}')" style="background:#334155; color:white; font-size:10px; padding:8px; border-radius:5px; border:none; flex:1;">${isBilled ? 'RÉOUVRIR' : 'FACTURÉ'}</button>
-                        <button onclick="cmd('arch','${pName.replace(/'/g,"\\'")}')" style="background:#0f172a; color:white; font-size:10px; padding:8px; border-radius:5px; border:none; flex:1;">${isArchived ? 'RESTAURER' : 'ARCHIVER'}</button>
-                    </div>
-                </div>`;
+            db.unshift({ id: Date.now(), date, project, type, val, info });
+            localStorage.setItem('PT_DB_V28', JSON.stringify(db));
             
-            if (isArchived) archive.innerHTML += cardHtml; else bilan.innerHTML += cardHtml;
+            // Animation visuelle de confirmation (vibre si dispo)
+            if(window.navigator.vibrate) window.navigator.vibrate(20);
+            document.getElementById('saveBtn').innerText = "ENREGISTRÉ ✓";
+            setTimeout(() => { document.getElementById('saveBtn').innerText = "ENREGISTRER"; }, 1500);
+
+            document.getElementById('project').value = "";
+            ['s1','e1','s2','e2'].forEach(id => document.getElementById(id).value = "");
+            render();
+        };
+
+        function render() {
+            const recent = document.getElementById('recent-logs');
+            const bList = document.getElementById('list-bilan');
+            const aList = document.getElementById('list-archive');
+            
+            document.getElementById('project-list').innerHTML = [...new Set(db.map(l => l.project))].map(p => `<option value="${p}">`).join('');
+
+            recent.innerHTML = db.slice(0, 4).map(l => `
+                <div class="glass-card p-4 flex justify-between items-center border-l-4 ${l.type === 'Production' ? 'border-blue-500' : 'border-amber-500'}">
+                    <div class="text-[10px]"><p class="text-[7px] text-slate-500 font-bold">${l.date.split('-').reverse().join('/')}</p><h4 class="font-bold text-slate-100">${l.project}</h4><p class="text-[8px] text-blue-400 italic">${l.info}</p></div>
+                    <p class="font-black text-lg tracking-tighter">${l.val.toFixed(2)}€</p>
+                </div>`).join('');
+
+            let groups = db.reduce((acc, l) => { (acc[l.project] = acc[l.project] || []).push(l); return acc; }, {});
+            let hB = "", hA = "", tP = 0, tF = 0;
+
+            for (let p in groups) {
+                let isB = billed.includes(p), isA = archived.includes(p);
+                let sum = groups[p].reduce((s, l) => s + l.val, 0);
+                if(!isA) { if(isB) tF += sum; else tP += sum; }
+
+                let rows = groups[p].map(l => `
+                    <div class="flex justify-between py-2 border-b border-white/5 last:border-0 text-[10px]">
+                        <span class="text-slate-400">${l.date.split('-').reverse().join('/')}</span>
+                        <span class="text-blue-400 font-bold">${l.info}</span>
+                        <div class="flex items-center gap-2"><span class="font-bold">${l.val.toFixed(2)}€</span><span onclick="del(${l.id})" class="text-[10px]">🗑️</span></div>
+                    </div>`).join('');
+
+                let card = `
+                <div class="glass-card mb-4 overflow-hidden ${isB && !isA ? 'facture-true' : ''}">
+                    <div class="p-4 bg-white/5 flex justify-between items-center">
+                        <h3 class="font-bold text-[10px] uppercase">${p}</h3>
+                        <div class="flex gap-2">
+                            <button onclick="cmd('b','${p.replace(/'/g,"\\'")}')" class="text-[8px] font-bold px-3 py-2 rounded bg-slate-700 uppercase">${isB ? 'Ouvrir' : 'Facturer'}</button>
+                            <button onclick="cmd('a','${p.replace(/'/g,"\\'")}')" class="text-[8px] font-bold px-3 py-2 rounded bg-slate-800 uppercase">${isA ? 'Sortir' : 'Archiver'}</button>
+                        </div>
+                    </div>
+                    <div class="px-4 pb-2">${rows}</div>
+                </div>`;
+                if(isA) hA += card; else hB += card;
+            }
+            bList.innerHTML = hB || "<p class='text-center py-10 opacity-20 text-[10px] font-black uppercase'>Bilan vide</p>";
+            aList.innerHTML = hA || "<p class='text-center py-10 opacity-20 text-[10px] font-black uppercase'>Archives vides</p>";
+            document.getElementById('total-p').innerText = tP.toFixed(2) + " €";
+            document.getElementById('total-b').innerText = tF.toFixed(2) + " €";
         }
 
-        document.getElementById('total-af').innerText = tAF.toFixed(2) + '€';
-        document.getElementById('total-f').innerText = tF.toFixed(2) + '€';
-    }
+        window.cmd = (type, p) => {
+            if(type === 'b') { billed.includes(p) ? billed = billed.filter(x => x !== p) : billed.push(p); localStorage.setItem('PT_B_V28', JSON.stringify(billed)); }
+            else { archived.includes(p) ? archived = archived.filter(x => x !== p) : archived.push(p); localStorage.setItem('PT_A_V28', JSON.stringify(archived)); }
+            render();
+        };
 
-    // Fonction de sauvegarde
-    document.getElementById('saveBtn').addEventListener('click', function() {
-        const pName = document.getElementById('project').value.toUpperCase() || "SANS NOM";
-        const type = document.getElementById('type').value;
-        const date = document.getElementById('date').value;
-        
-        if(!date) return alert("Choisis une date !");
+        window.del = (id) => { if(confirm("Supprimer ?")) { db = db.filter(l => l.id !== id); localStorage.setItem('PT_DB_V28', JSON.stringify(db)); render(); } };
 
-        let val = 0;
-        if(type.includes('Pose')) {
-            val = type === 'Pose Piges' ? parseFloat(document.getElementById('p_piges').value) : 300;
-        } else if(type === 'Jours OFF') {
-            val = 100;
-        } else {
-            const timeToMin = (id) => {
-                const v = document.getElementById(id).value;
-                if(!v) return 0;
-                const [h,m] = v.split(':');
-                return parseInt(h)*60 + parseInt(m);
-            };
-            let diff = (timeToMin('e1') - timeToMin('s1')) + (timeToMin('e2') - timeToMin('s2'));
-            if(diff <= 0) return alert("Vérifie les heures !");
-            val = (diff/60) * (type === 'Production' ? parseFloat(document.getElementById('p_prod').value) : parseFloat(document.getElementById('p_trajet').value));
+        function copy(mode) {
+            let t = "RECAP " + mode.toUpperCase() + "\n\n";
+            db.forEach(l => { if((mode === 'archive' && archived.includes(l.project)) || (mode === 'bilan' && !archived.includes(l.project))) t += `${l.date} | ${l.project} | ${l.val.toFixed(2)}€\n`; });
+            navigator.clipboard.writeText(t).then(() => alert("Copié !"));
         }
+        document.getElementById('copyBilan').onclick = () => copy('bilan');
+        document.getElementById('copyArchive').onclick = () => copy('archive');
 
-        data.unshift({ project: pName, type: type, date: date, val: val, id: Date.now() });
-        localStorage.setItem('pt_data_v27', JSON.stringify(data));
-        
-        document.getElementById('project').value = '';
         render();
-        alert("Enregistré !");
-    });
-
-    // Gestion des commandes (Facture / Archive)
-    window.cmd = function(action, pName) {
-        if(action === 'bill') {
-            if(billed_projects.includes(pName)) billed_projects = billed_projects.filter(p => p !== pName);
-            else billed_projects.push(pName);
-            localStorage.setItem('pt_billed_v27', JSON.stringify(billed_projects));
-        } else {
-            if(archived_projects.includes(pName)) archived_projects = archived_projects.filter(p => p !== pName);
-            else archived_projects.push(pName);
-            localStorage.setItem('pt_archived_v27', JSON.stringify(archived_projects));
-        }
-        render();
-    };
-
-    // Copie Notes
-    function setupCopy(btnId, mode) {
-        document.getElementById(btnId).addEventListener('click', () => {
-            let text = "RECAP " + mode.toUpperCase() + "\n\n";
-            data.forEach(item => {
-                let isA = archived_projects.includes(item.project);
-                if((mode === 'archive' && isA) || (mode === 'bilan' && !isA)) {
-                    text += `${item.date} | ${item.project} | ${item.val.toFixed(2)}€\n`;
-                }
-            });
-            navigator.clipboard.writeText(text).then(() => alert("Copié !"));
-        });
-    }
-    setupCopy('copyBilan', 'bilan');
-    setupCopy('copyArchive', 'archive');
-
-    // Navigation Nav Item
-    const vp = document.getElementById('viewport');
-    vp.addEventListener('scroll', () => {
-        let i = Math.round(vp.scrollLeft / window.innerWidth);
-        document.querySelectorAll('.nav-item').forEach((n, idx) => n.classList.toggle('active', i === idx));
-    });
-
-    render();
-</script>
-
+    </script>
 </body>
 </html>
