@@ -39,17 +39,18 @@
 
             <div id="section-hours" class="space-y-4 pt-2">
                 <div class="grid grid-cols-2 gap-2">
-                    <div class="text-[9px] uppercase font-bold text-slate-500 pl-1 italic">Matin</div>
-                    <div class="text-[9px] uppercase font-bold text-slate-500 pl-1 italic">Fin</div>
+                    <div class="text-[9px] uppercase font-bold text-slate-500 pl-1 italic">Début Matin</div>
+                    <div class="text-[9px] uppercase font-bold text-slate-500 pl-1 italic">Fin Matin</div>
                     <input type="time" id="start1" class="input-field">
                     <input type="time" id="end1" class="input-field">
                 </div>
                 <div class="grid grid-cols-2 gap-2">
-                    <div class="text-[9px] uppercase font-bold text-slate-500 pl-1 italic">Après-midi</div>
-                    <div class="text-[9px] uppercase font-bold text-slate-500 pl-1 italic">Fin</div>
+                    <div class="text-[9px] uppercase font-bold text-slate-500 pl-1 italic">Début Reprise</div>
+                    <div class="text-[9px] uppercase font-bold text-slate-500 pl-1 italic">Fin Départ</div>
                     <input type="time" id="start2" class="input-field">
                     <input type="time" id="end2" class="input-field">
                 </div>
+                <p class="text-[8px] text-slate-500 italic text-center">Laisse vide les cases inutiles si tu ne prends pas de pause.</p>
             </div>
 
             <button onclick="addEntry()" class="w-full btn-primary py-4 rounded-xl font-black text-sm uppercase tracking-widest text-white mt-2">Enregistrer</button>
@@ -80,8 +81,8 @@
         </div>
 
         <div class="p-4 border-t border-white/10 bg-slate-900 grid grid-cols-2 gap-2">
-            <button onclick="copyToClipboard()" class="bg-white/5 text-white py-4 rounded-xl text-[9px] font-bold uppercase">Copier Notes</button>
-            <button onclick="exportCSV()" class="bg-emerald-800 text-white py-4 rounded-xl text-[9px] font-bold uppercase">Excel</button>
+            <button onclick="copyToClipboard()" class="bg-white/5 text-white py-4 rounded-xl text-[9px] font-bold uppercase tracking-widest">Copier Notes</button>
+            <button onclick="exportCSV()" class="bg-emerald-800 text-white py-4 rounded-xl text-[9px] font-bold uppercase tracking-widest">Excel</button>
         </div>
     </div>
 
@@ -89,10 +90,133 @@
         <div class="glass-card w-full p-6 max-w-sm">
             <h2 class="text-center font-bold mb-8 uppercase text-sm tracking-widest italic">Tarification</h2>
             <div class="space-y-5" id="settings-list"></div>
-            <button onclick="saveSettings()" class="w-full btn-primary text-white py-4 rounded-xl font-bold mt-8 uppercase text-xs">Mettre à jour</button>
-            <button onclick="toggleSettings(false)" class="w-full text-slate-600 text-[10px] mt-4 font-bold uppercase">Annuler</button>
+            <button onclick="saveSettings()" class="w-full btn-primary text-white py-4 rounded-xl font-bold mt-8">Valider</button>
+            <button onclick="toggleSettings(false)" class="w-full text-slate-600 text-[10px] mt-4 uppercase">Annuler</button>
         </div>
     </div>
 
     <script>
-        let settings = JSON.parse(localStorage.getItem('pro_settings_v18')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 10
+        let settings = JSON.parse(localStorage.getItem('pro_settings_v19')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
+        document.getElementById('date').valueAsDate = new Date();
+
+        function formatDate(iso) { const [y, m, d] = iso.split('-'); return `${d}/${m}/${y}`; }
+
+        function toggleInputs() {
+            const t = document.getElementById('type').value;
+            document.getElementById('section-hours').style.display = (t.includes('Pose') || t === 'Jours OFF') ? 'none' : 'block';
+        }
+
+        function toggleSettings(s) { 
+            document.getElementById('settings-modal').classList.toggle('hidden', !s); 
+            if(s) {
+                const labels = { prod: 'Prod (€/h)', trajet: 'Trajet (€/h)', piges: 'Piges', omnes: 'Omnes', off: 'OFF' };
+                document.getElementById('settings-list').innerHTML = Object.keys(settings).map(k => `
+                    <div class="flex justify-between items-center"><label class="text-[10px] uppercase font-bold text-slate-400">${labels[k]}</label><input type="number" id="price-${k}" value="${settings[k]}" class="input-field w-24 text-right"></div>
+                `).join('');
+            }
+        }
+
+        function saveSettings() { 
+            Object.keys(settings).forEach(k => settings[k] = parseFloat(document.getElementById(`price-${k}`).value));
+            localStorage.setItem('pro_settings_v19', JSON.stringify(settings)); toggleSettings(false); render(); 
+        }
+
+        function getMinutes(timeStr) {
+            if(!timeStr) return null;
+            const [h, m] = timeStr.split(':');
+            return parseInt(h) * 60 + parseInt(m);
+        }
+
+        function addEntry() {
+            const date = document.getElementById('date').value, project = document.getElementById('project').value || "DIVERS", type = document.getElementById('type').value;
+            let val = 0, detail = "";
+
+            if (type.includes('Pose') || type === 'Jours OFF') { 
+                val = settings[type === 'Pose Piges' ? 'piges' : (type === 'Pose Omnes' ? 'omnes' : 'off')]; 
+                detail = "FORFAIT"; 
+            } else {
+                const s1 = getMinutes(document.getElementById('start1').value);
+                const e1 = getMinutes(document.getElementById('end1').value);
+                const s2 = getMinutes(document.getElementById('start2').value);
+                const e2 = getMinutes(document.getElementById('end2').value);
+                
+                let totalMin = 0;
+                let textDetail = "";
+
+                // CAS 1 : Journée continue (Début 1 et Fin 2 remplis)
+                if(s1 !== null && e2 !== null && e1 === null && s2 === null) {
+                    totalMin = e2 - s1;
+                    textDetail = `${document.getElementById('start1').value} > ${document.getElementById('end2').value}`;
+                } 
+                // CAS 2 : Deux sessions (Classique)
+                else {
+                    const d1 = (s1 !== null && e1 !== null) ? (e1 - s1) : 0;
+                    const d2 = (s2 !== null && e2 !== null) ? (e2 - s2) : 0;
+                    totalMin = d1 + d2;
+                    textDetail = (s1 !== null ? document.getElementById('start1').value + '-' + document.getElementById('end1').value : "") + 
+                                 (s2 !== null ? " / " + document.getElementById('start2').value + '-' + document.getElementById('end2').value : "");
+                }
+
+                if(totalMin <= 0) return alert("Vérifie tes horaires !");
+                
+                val = (totalMin / 60) * (type === 'Production' ? settings.prod : settings.trajet);
+                detail = `${textDetail} (${Math.floor(totalMin/60)}h${(totalMin%60).toString().padStart(2, '0')})`;
+            }
+
+            let logs = JSON.parse(localStorage.getItem('pro_data_v19') || '[]');
+            logs.unshift({ id: Date.now(), date, project: project.toUpperCase(), type, val, detail });
+            localStorage.setItem('pro_data_v19', JSON.stringify(logs)); render();
+            ['project','start1','end1','start2','end2'].forEach(id => document.getElementById(id).value = "");
+        }
+
+        function render() {
+            const logs = JSON.parse(localStorage.getItem('pro_data_v19') || '[]');
+            const billedList = JSON.parse(localStorage.getItem('billed_v19') || '[]');
+            document.getElementById('project-list').innerHTML = [...new Set(logs.map(l => l.project))].map(p => `<option value="${p}">`).join('');
+
+            document.getElementById('recent-logs').innerHTML = logs.slice(0, 5).map(l => `
+                <div class="glass-card p-4 flex justify-between items-center border-l-4 ${l.type === 'Production' ? 'border-blue-500' : 'border-indigo-500'}">
+                    <div>
+                        <p class="text-[8px] font-bold text-slate-500 uppercase">${formatDate(l.date)}</p>
+                        <h4 class="font-bold text-sm text-slate-100">${l.project}</h4>
+                        <p class="text-[9px] text-blue-400 font-bold italic">${l.detail}</p>
+                    </div>
+                    <p class="font-black text-lg tracking-tighter">${l.val.toFixed(2)}€</p>
+                </div>
+            `).join('');
+
+            const grouped = logs.reduce((acc, log) => { (acc[log.project] = acc[log.project] || []).push(log); return acc; }, {});
+            let html = "", tP = 0, tB = 0;
+            for (const proj in grouped) {
+                const isB = billedList.includes(proj);
+                let pT = grouped[proj].reduce((s, l) => s + l.val, 0);
+                isB ? tB += pT : tP += pT;
+                let rows = grouped[proj].map(l => `
+                    <div class="flex justify-between items-center py-4 border-b border-white/5 last:border-0">
+                        <div class="text-[10px]"><span class="font-bold text-slate-300">${formatDate(l.date)}</span><br><span class="text-blue-400 text-[8px] uppercase font-bold">${l.type}</span></div>
+                        <div class="text-[9px] text-slate-500 italic text-center px-2 flex-grow">${l.detail}</div>
+                        <div class="flex items-center gap-4"><span class="font-bold text-sm">${l.val.toFixed(2)}€</span><span onclick="deleteItem(${l.id})" class="text-xs p-2">🗑️</span></div>
+                    </div>`).join('');
+                html += `
+                <div class="glass-card overflow-hidden ${isB ? 'facture-true' : ''}">
+                    <div class="p-4 bg-white/5 flex justify-between items-center">
+                        <h3 class="font-bold text-[10px] uppercase tracking-wider">${proj}</h3>
+                        <button onclick="toggleFacture('${proj.replace(/'/g, "\\'")}')" class="text-[8px] font-bold px-3 py-2 rounded bg-slate-700 uppercase">${isB ? 'Réactiver' : 'Archiver'}</button>
+                    </div>
+                    <div class="px-4 pb-2">${rows}</div>
+                </div>`;
+            }
+            document.getElementById('tableContainer').innerHTML = html || "<p class='text-center text-[10px] text-slate-700 uppercase py-10'>Aucune donnée</p>";
+            document.getElementById('total-pending').innerText = tP.toFixed(2) + " €";
+            document.getElementById('total-billed').innerText = tB.toFixed(2) + " €";
+        }
+
+        function toggleFacture(proj) { let b = JSON.parse(localStorage.getItem('billed_v19') || '[]'); b.includes(proj) ? b = b.filter(p => p !== proj) : b.push(proj); localStorage.setItem('billed_v19', JSON.stringify(b)); render(); }
+        function deleteItem(id) { if(confirm("Supprimer ?")) { let l = JSON.parse(localStorage.getItem('pro_data_v19') || '[]'); l = l.filter(i => i.id !== id); localStorage.setItem('pro_data_v19', JSON.stringify(l)); render(); } }
+        function toggleModal(s) { document.getElementById('modal').classList.toggle('hidden', !s); if(s) render(); }
+        function exportCSV() { const logs = JSON.parse(localStorage.getItem('pro_data_v19') || '[]'); let csv = "Date;Projet;Activite;Duree;Montant\n"; logs.forEach(l => csv += `${formatDate(l.date)};${l.project};${l.type};${l.detail};${l.val.toFixed(2)}\n`); const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'})); link.download = "ProTrack_Mobile.csv"; link.click(); }
+        function copyToClipboard() { const logs = JSON.parse(localStorage.getItem('pro_data_v19') || '[]'); let t = "RECAP\n\n"; logs.forEach(l => t += `${formatDate(l.date)} | ${l.project} | ${l.detail} | ${l.val.toFixed(2)}€\n`); navigator.clipboard.writeText(t).then(() => alert("Copié !")); }
+        render(); toggleInputs();
+    </script>
+</body>
+</html>
