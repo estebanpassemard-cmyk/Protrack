@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrack V68.ULTIMATE</title>
+    <title>ProTrack V68.STABLE</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background: #0f172a; color: white; font-family: sans-serif; margin: 0; padding-bottom: 90px; }
@@ -29,7 +29,7 @@
 </head>
 <body>
 
-    <div class="version-tag">V68.ULTIMATE</div>
+    <div class="version-tag">V68.STABLE</div>
 
     <div class="nav">
         <div id="nv0" class="nav-item active" onclick="go(0)">Saisie</div>
@@ -89,16 +89,19 @@
     </div>
 
     <script>
-        var db = JSON.parse(localStorage.getItem('PT_V68_ULTI') || '[]');
-        var billed = JSON.parse(localStorage.getItem('PT_V68_BILL') || '[]');
-        var archived = JSON.parse(localStorage.getItem('PT_V68_ARCH') || '[]');
-        var rates = JSON.parse(localStorage.getItem('PT_V68_RT')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
+        // Utilisation de clés de stockage propres
+        var db = JSON.parse(localStorage.getItem('PRO_DATA_V68') || '[]');
+        var billed = JSON.parse(localStorage.getItem('PRO_BILL_V68') || '[]');
+        var archived = JSON.parse(localStorage.getItem('PRO_ARCH_V68') || '[]');
+        var rates = JSON.parse(localStorage.getItem('PRO_RT_V68')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
 
         function go(n) {
             var pgs = ['pg0','pg1','pg2'];
             for(var i=0; i<pgs.length; i++) {
-                document.getElementById(pgs[i]).classList.toggle('active-page', i === n);
-                document.getElementById('nv'+i).classList.toggle('active', i === n);
+                var el = document.getElementById(pgs[i]);
+                var nv = document.getElementById('nv'+i);
+                if(el) el.style.display = (i === n) ? 'block' : 'none';
+                if(nv) nv.className = (i === n) ? 'nav-item active' : 'nav-item';
             }
             draw();
         }
@@ -109,7 +112,7 @@
             var d = document.getElementById('in-date').value;
             var p = document.getElementById('in-proj').value.toUpperCase() || "DIVERS";
             var t = document.getElementById('in-type').value;
-            if(!d) return alert("Date manquante");
+            if(!d) { alert("Date manquante"); return; }
 
             var vS1 = document.getElementById('s1').value, vE1 = document.getElementById('e1').value;
             var vS2 = document.getElementById('s2').value, vE2 = document.getElementById('e2').value;
@@ -137,8 +140,12 @@
             }
 
             db.unshift({ id: new Date().getTime(), d: d, p: p, t: t, val: val, hStr: hStr, dur: dur });
-            localStorage.setItem('PT_V68_ULTI', JSON.stringify(db));
-            ['in-proj','s1','e1','s2','e2'].forEach(function(id){ document.getElementById(id).value = ""; });
+            localStorage.setItem('PRO_DATA_V68', JSON.stringify(db));
+            document.getElementById('in-proj').value = "";
+            document.getElementById('s1').value = "";
+            document.getElementById('e1').value = "";
+            document.getElementById('s2').value = "";
+            document.getElementById('e2').value = "";
             draw();
             alert("Enregistré !");
         }
@@ -146,7 +153,7 @@
         function del(id) {
             if(confirm("Supprimer ?")) {
                 db = db.filter(function(o) { return o.id !== id; });
-                localStorage.setItem('PT_V68_ULTI', JSON.stringify(db));
+                localStorage.setItem('PRO_DATA_V68', JSON.stringify(db));
                 draw();
             }
         }
@@ -168,8 +175,8 @@
             db.forEach(function(o) { groups[o.p] = groups[o.p] || []; groups[o.p].push(o); });
 
             for (var proj in groups) {
-                var isB = billed.indexOf(proj) > -1;
-                var isA = archived.indexOf(proj) > -1;
+                var isB = (billed.indexOf(proj) > -1);
+                var isA = (archived.indexOf(proj) > -1);
                 var total = 0;
                 groups[proj].forEach(function(o) { total += o.val; });
                 if(!isA) { if(isB) tF += total; else tAF += total; }
@@ -186,4 +193,31 @@
                     lines + '<div style="display:flex; gap:10px; margin-top:15px;">' +
                     '<button class="btn-sec" onclick="tB(\''+proj+'\')">'+(isB ? 'À FACTURER' : 'FACTURÉ')+'</button>' +
                     '<button class="btn-sec" onclick="tA(\''+proj+'\')">'+(isA ? 'RÉACTIVER' : 'ARCHIVER')+'</button></div></div>';
-                if(is
+                if(isA) hA += card; else hB += card;
+            }
+            document.getElementById('list-bilan').innerHTML = hB || "Vide";
+            document.getElementById('list-archive').innerHTML = hA || "Vide";
+            document.getElementById('sum-af').innerText = tAF.toFixed(2) + "€";
+            document.getElementById('sum-f').innerText = tF.toFixed(2) + "€";
+        }
+
+        window.tB = function(p) { if(billed.indexOf(p) > -1) billed = billed.filter(function(x){return x!==p;}); else billed.push(p); localStorage.setItem('PRO_BILL_V68', JSON.stringify(billed)); draw(); };
+        window.tA = function(p) { if(archived.indexOf(p) > -1) archived = archived.filter(function(x){return x!==p;}); else archived.push(p); localStorage.setItem('PRO_ARCH_V68', JSON.stringify(archived)); draw(); };
+
+        function openSet() {
+            var h = "";
+            for(var k in rates) { h += '<label class="label">'+k+'</label><input type="number" id="rt-'+k+'" value="'+rates[k]+'" class="input">'; }
+            document.getElementById('price-inputs').innerHTML = h;
+            document.getElementById('set-modal').style.display = 'flex';
+        }
+        function closeSet() {
+            for(var k in rates) { rates[k] = parseFloat(document.getElementById('rt-'+k).value) || 0; }
+            localStorage.setItem('PRO_RT_V68', JSON.stringify(rates));
+            document.getElementById('set-modal').style.display = 'none';
+            draw();
+        }
+        document.getElementById('in-date').valueAsDate = new Date();
+        draw();
+    </script>
+</body>
+</html>
