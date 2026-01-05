@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrack V68.4</title>
+    <title>ProTrack V68-PERFECT</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background: #0f172a; color: white; font-family: sans-serif; margin: 0; padding-bottom: 90px; }
@@ -12,21 +12,21 @@
         .nav-item { flex: 1; color: #64748b; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px; cursor: pointer; }
         .nav-item.active { color: #3b82f6; border-top: 3px solid #3b82f6; background: rgba(59, 130, 246, 0.1); }
 
-        /* Correction affichage pages */
-        .page { display: none; padding: 15px; visibility: hidden; height: 0; overflow: hidden; }
-        .active-page { display: block !important; visibility: visible !important; height: auto !important; overflow: visible !important; }
+        .page { display: none; padding: 15px; }
+        .active-page { display: block !important; }
 
         .card { background: #1e293b; border-radius: 10px; padding: 15px; margin-bottom: 15px; border: 1px solid #334155; position: relative; }
         .input { background: #0f172a; border: 1px solid #475569; color: white; border-radius: 6px; padding: 12px; width: 100%; font-size: 16px; margin-bottom: 10px; display: block; }
         .btn { background: #2563eb; color: white; padding: 15px; border-radius: 10px; font-weight: bold; border: none; font-size: 16px; width: 100%; }
         .btn-sec { background: #334155; padding: 10px; font-size: 10px; color: white; border-radius: 5px; text-align: center; font-weight: bold; flex: 1; border: none; }
         
-        .row-item { border-bottom: 1px solid #475569; padding: 10px 0; position: relative; }
+        .row-item { border-bottom: 1px solid #475569; padding: 10px 0; }
         .blue-h { color: #3b82f6; font-weight: bold; font-size: 11px; display: block; margin-top: 4px; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .label { font-size: 11px; color: #94a3b8; margin-bottom: 5px; text-transform: uppercase; }
         
-        .del-btn { color: #ef4444; font-size: 18px; padding: 5px; cursor: pointer; border: none; background: none; }
+        .del-btn { color: #ef4444; border: none; background: none; font-size: 16px; padding: 5px; cursor: pointer; }
+        .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:10000; padding:20px; align-items:center; }
     </style>
 </head>
 <body>
@@ -38,6 +38,7 @@
     </div>
 
     <div id="pg0" class="page active-page">
+        <div onclick="openSet()" style="font-size:25px; margin-bottom:15px; cursor:pointer; width:fit-content;">⚙️</div>
         <div class="card">
             <div class="grid">
                 <input type="date" id="in-date" class="input">
@@ -50,8 +51,8 @@
                 <option value="Pose Omnes">Pose Omnes</option>
             </select>
             <div class="grid">
-                <div><label class="label">Matin / Début</label><input type="time" id="s1" class="input"></div>
-                <div><label class="label">Aprem / Fin</label><input type="time" id="e2" class="input"></div>
+                <div><label class="label">Début</label><input type="time" id="s1" class="input"></div>
+                <div><label class="label">Fin</label><input type="time" id="e2" class="input"></div>
             </div>
             <button class="btn" onclick="addItem()">ENREGISTRER</button>
         </div>
@@ -66,29 +67,28 @@
         <div id="list-bilan"></div>
     </div>
 
-    <div id="pg2" class="page">
-        <div id="list-archive"></div>
+    <div id="pg2" class="page"><div id="list-archive"></div></div>
+
+    <div id="set-modal" class="modal">
+        <div class="card" style="width:100%;">
+            <h3>Tarifs</h3>
+            <div id="price-inputs"></div>
+            <button class="btn" onclick="closeSet()">FERMER</button>
+        </div>
     </div>
 
     <script>
         var db = JSON.parse(localStorage.getItem('PT_V68_DATA') || '[]');
         var billed = JSON.parse(localStorage.getItem('PT_V68_BILL') || '[]');
         var archived = JSON.parse(localStorage.getItem('PT_V68_ARCH') || '[]');
-        var rates = { prod: 25, trajet: 20, piges: 350, omnes: 300 };
+        var rates = JSON.parse(localStorage.getItem('PT_V68_RT')) || { prod: 25, trajet: 20, piges: 350, omnes: 300 };
 
         function go(n) {
             var pgs = ['pg0','pg1','pg2'];
-            for(var i=0; i<pgs.length; i++){
-                var el = document.getElementById(pgs[i]);
-                var nv = document.getElementById('nv'+i);
-                if(i === n) {
-                    el.classList.add('active-page');
-                    nv.classList.add('active');
-                } else {
-                    el.classList.remove('active-page');
-                    nv.classList.remove('active');
-                }
-            }
+            pgs.forEach(function(p, i) {
+                document.getElementById(p).classList.toggle('active-page', i === n);
+                document.getElementById('nv'+i).classList.toggle('active', i === n);
+            });
             draw();
         }
 
@@ -96,10 +96,11 @@
             var d = document.getElementById('in-date').value;
             var p = document.getElementById('in-proj').value.toUpperCase() || "DIVERS";
             var t = document.getElementById('in-type').value;
-            if(!d) return alert("Date manquante");
+            if(!d) return alert("Date ?");
 
             function toM(v) { if(!v) return -1; var s = v.split(':'); return parseInt(s[0])*60+parseInt(s[1]); }
-            var s1=toM(document.getElementById('s1').value), e2=toM(document.getElementById('e2').value);
+            var s1 = toM(document.getElementById('s1').value);
+            var e2 = toM(document.getElementById('e2').value);
             
             var val=0, dur=0, hStr = (document.getElementById('s1').value || "??") + " > " + (document.getElementById('e2').value || "??");
 
@@ -118,8 +119,8 @@
             alert("Enregistré");
         }
 
-        function deleteItem(id) {
-            if(confirm("Supprimer cette ligne ?")) {
+        function del(id) {
+            if(confirm("Supprimer ?")) {
                 db = db.filter(function(o) { return o.id !== id; });
                 localStorage.setItem('PT_V68_DATA', JSON.stringify(db));
                 draw();
@@ -127,18 +128,15 @@
         }
 
         function draw() {
-            var hRecent = "";
-            db.slice(0, 3).forEach(function(o) {
-                hRecent += '<div class="card" style="font-size:12px;">' +
-                           '<div style="display:flex; justify-content:space-between;"><b>'+o.p+'</b><button class="del-btn" onclick="deleteItem('+o.id+')">🗑️</button></div>' +
-                           o.val.toFixed(2) + '€ | ' + o.hStr + '</div>';
-            });
-            document.getElementById('recent-list').innerHTML = hRecent;
+            // Liste Saisie
+            document.getElementById('recent-list').innerHTML = db.slice(0, 3).map(function(o) {
+                return '<div class="card" style="font-size:12px;"><b>'+o.p+'</b> - '+o.val.toFixed(2)+'€ <button class="del-btn" onclick="del('+o.id+')" style="float:right">🗑️</button></div>';
+            }).join('');
 
+            var hB="", hA="", tAF=0, tF=0;
             var groups = {};
             db.forEach(function(o) { groups[o.p] = groups[o.p] || []; groups[o.p].push(o); });
 
-            var hB="", hA="", tAF=0, tF=0;
             for (var proj in groups) {
                 var isB = billed.indexOf(proj) > -1;
                 var isA = archived.indexOf(proj) > -1;
@@ -148,13 +146,48 @@
 
                 var lines = groups[proj].map(function(o) {
                     return '<div class="row-item">' +
-                           '<div style="display:flex; justify-content:space-between; align-items:center; font-size:12px;">' +
+                           '<div style="display:flex; justify-content:space-between; font-size:12px;">' +
                            '<span>'+o.d.split('-').reverse().join('/')+'</span>' +
                            '<span>'+o.hStr+'</span>' +
-                           '<span>'+o.val.toFixed(2)+'€ <button class="del-btn" onclick="deleteItem('+o.id+')" style="font-size:14px;">×</button></span>' +
+                           '<span>'+o.val.toFixed(2)+'€ <button class="del-btn" onclick="del('+o.id+')">×</button></span>' +
                            '</div>' +
                            (o.dur > 0 ? '<span class="blue-h">TOTAL : '+o.dur.toFixed(2)+'h</span>' : '') +
                            '</div>';
                 }).join('');
 
-                var card
+                var card = '<div class="card" style="border-left: 5px solid '+(isB ? '#10b981' : '#3b82f6')+'">' +
+                    '<div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:10px;"><span>'+proj+'</span><span>'+total.toFixed(2)+'€</span></div>' +
+                    lines +
+                    '<div style="display:flex; gap:10px; margin-top:15px;">' +
+                    '<button class="btn-sec" onclick="tB(\''+proj+'\')">'+(isB ? 'À FACTURER' : 'FACTURÉ')+'</button>' +
+                    '<button class="btn-sec" onclick="tA(\''+proj+'\')">'+(isA ? 'RÉACTIVER' : 'ARCHIVER')+'</button>' +
+                    '</div></div>';
+                if(isA) hA += card; else hB += card;
+            }
+            document.getElementById('list-bilan').innerHTML = hB || "Vide";
+            document.getElementById('list-archive').innerHTML = hA || "Vide";
+            document.getElementById('sum-af').innerText = tAF.toFixed(2) + "€";
+            document.getElementById('sum-f').innerText = tF.toFixed(2) + "€";
+        }
+
+        window.tB = function(p) { if(billed.indexOf(p) > -1) billed = billed.filter(function(x){return x!==p;}); else billed.push(p); localStorage.setItem('PT_V68_BILL', JSON.stringify(billed)); draw(); };
+        window.tA = function(p) { if(archived.indexOf(p) > -1) archived = archived.filter(function(x){return x!==p;}); else archived.push(p); localStorage.setItem('PT_V68_ARCH', JSON.stringify(archived)); draw(); };
+
+        function openSet() {
+            var h = "";
+            for(var k in rates) { h += '<label class="label">'+k+'</label><input type="number" id="rt-'+k+'" value="'+rates[k]+'" class="input">'; }
+            document.getElementById('price-inputs').innerHTML = h;
+            document.getElementById('set-modal').style.display = 'flex';
+        }
+        function closeSet() {
+            for(var k in rates) { rates[k] = parseFloat(document.getElementById('rt-'+k).value) || 0; }
+            localStorage.setItem('PT_V68_RT', JSON.stringify(rates));
+            document.getElementById('set-modal').style.display = 'none';
+            draw();
+        }
+
+        document.getElementById('in-date').valueAsDate = new Date();
+        draw();
+    </script>
+</body>
+</html>
