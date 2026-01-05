@@ -1,42 +1,35 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrack V120</title>
+    <title>ProTrack V130</title>
     <style>
-        :root { --bg: #0f172a; --card: #1e293b; --accent: #3b82f6; --text: #f8fafc; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
-        body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; padding-bottom: 85px; }
+        body { background: #0f172a; color: white; font-family: sans-serif; margin: 0; padding: 10px; }
+        .menu { display: flex; background: #1e293b; padding: 5px; border-radius: 8px; margin-bottom: 20px; }
+        .menu-btn { flex: 1; padding: 15px; border: none; background: none; color: #64748b; font-weight: bold; font-size: 14px; }
+        .menu-btn.active { color: #3b82f6; background: #0f172a; border-radius: 5px; }
         
-        /* Nav ultra-simple */
-        .nav { position: fixed; bottom: 0; width: 100%; height: 70px; background: var(--card); display: flex; border-top: 1px solid #334155; z-index: 999; }
-        .nav-btn { flex: 1; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #64748b; font-size: 14px; }
-        .nav-btn.active { color: var(--accent); border-top: 3px solid var(--accent); background: rgba(59, 130, 246, 0.1); }
+        .page { display: none; }
+        .page-active { display: block; }
 
-        .page { display: none; padding: 15px; }
-        .page.active { display: block; }
-
-        .card { background: var(--card); border-radius: 10px; padding: 15px; margin-bottom: 15px; border: 1px solid #334155; }
-        .input { background: var(--bg); border: 1px solid #475569; color: white; border-radius: 8px; padding: 12px; width: 100%; font-size: 16px; margin-bottom: 10px; display: block; }
-        .btn-main { background: var(--accent); color: white; padding: 15px; border-radius: 10px; font-weight: bold; border: none; width: 100%; font-size: 16px; }
+        .card { background: #1e293b; border-radius: 10px; padding: 15px; margin-bottom: 15px; border: 1px solid #334155; }
+        .input { background: #0f172a; border: 1px solid #475569; color: white; border-radius: 8px; padding: 12px; width: 100%; font-size: 16px; margin-bottom: 10px; box-sizing: border-box; }
+        .btn-main { background: #3b82f6; color: white; padding: 15px; border-radius: 10px; font-weight: bold; border: none; width: 100%; font-size: 16px; }
         
-        .label { font-size: 11px; color: #94a3b8; margin-bottom: 5px; display: block; text-transform: uppercase; }
-        .blue-h { color: var(--accent); font-weight: bold; font-size: 11px; display: block; margin-top: 5px; }
-        .row-item { border-bottom: 1px solid #334155; padding: 10px 0; font-size: 12px; }
-        .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:1000; padding:20px; align-items:center; }
+        .blue-text { color: #3b82f6; font-weight: bold; font-size: 11px; }
+        .row { border-bottom: 1px solid #334155; padding: 10px 0; font-size: 12px; }
     </style>
 </head>
 <body>
 
-    <div class="nav">
-        <div class="nav-btn active" id="btn0">SAISIE</div>
-        <div class="nav-btn" id="btn1">BILAN</div>
-        <div class="nav-btn" id="btn2">ARCHIVES</div>
+    <div class="menu">
+        <button class="menu-btn active" id="b0" onclick="window.go(0)">SAISIE</button>
+        <button class="menu-btn" id="b1" onclick="window.go(1)">BILAN</button>
+        <button class="menu-btn" id="b2" onclick="window.go(2)">ARCHIVES</button>
     </div>
 
-    <div id="p0" class="page active">
-        <div id="open-set" style="font-size:25px; margin-bottom:15px; cursor:pointer; width:40px;">⚙️</div>
+    <div id="p0" class="page page-active">
         <div class="card">
             <input type="date" id="in-date" class="input">
             <input type="text" id="in-proj" placeholder="NOM DU PROJET" class="input">
@@ -47,46 +40,86 @@
                 <option value="Pose Omnes">Pose Omnes</option>
                 <option value="Jours OFF">Jours OFF</option>
             </select>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+            <div style="display:flex; gap:5px;">
                 <input type="time" id="s1" class="input">
                 <input type="time" id="e1" class="input">
+            </div>
+            <div style="display:flex; gap:5px;">
                 <input type="time" id="s2" class="input">
                 <input type="time" id="e2" class="input">
             </div>
-            <button class="btn-main" id="save-action">ENREGISTRER</button>
+            <button class="btn-main" onclick="window.sauver()">ENREGISTRER</button>
         </div>
-        <div id="last-entries"></div>
     </div>
 
     <div id="p1" class="page">
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:15px;">
-            <div class="card" style="text-align:center; margin:0;"><div class="label">À Facturer</div><div id="tot-af" style="font-weight:bold; font-size:18px;">0€</div></div>
-            <div class="card" style="text-align:center; margin:0;"><div class="label">Facturé</div><div id="tot-f" style="font-weight:bold; font-size:18px; color:#10b981;">0€</div></div>
-        </div>
-        <div id="main-bilan"></div>
+        <div id="bilan-content"></div>
     </div>
 
     <div id="p2" class="page">
-        <div id="main-archive"></div>
-    </div>
-
-    <div id="modal" class="modal">
-        <div class="card" style="width:100%;">
-            <h3>Tarifs</h3>
-            <div id="rates-list"></div>
-            <button class="btn-main" id="close-set" style="margin-top:10px;">OK</button>
-        </div>
+        <div id="archive-content"></div>
     </div>
 
     <script>
-        // Utilisation d'un objet unique pour éviter les conflits de variables
-        const App = {
-            data: JSON.parse(localStorage.getItem('PT_V12_DB') || '[]'),
-            billed: JSON.parse(localStorage.getItem('PT_V12_BI') || '[]'),
-            arch: JSON.parse(localStorage.getItem('PT_V12_AR') || '[]'),
-            rates: JSON.parse(localStorage.getItem('PT_V12_RT')) || { Production: 25, Trajet: 20, "Pose Piges": 350, "Pose Omnes": 300, "Jours OFF": 100 },
+        // Test immédiat au chargement
+        alert("ProTrack V130 chargé !");
 
-            init: function() {
-                // Attacher les événements de navigation
-                document.getElementById('btn0').addEventListener('click', () => App.go(0));
-                document.getElementById('btn1').addEventListener('click',
+        var db = JSON.parse(localStorage.getItem('PT130_DB') || '[]');
+        var billed = JSON.parse(localStorage.getItem('PT130_BI') || '[]');
+        var arch = JSON.parse(localStorage.getItem('PT130_AR') || '[]');
+
+        window.go = function(idx) {
+            document.getElementById('p0').style.display = (idx === 0) ? 'block' : 'none';
+            document.getElementById('p1').style.display = (idx === 1) ? 'block' : 'none';
+            document.getElementById('p2').style.display = (idx === 2) ? 'block' : 'none';
+            
+            document.getElementById('b0').className = (idx === 0) ? 'menu-btn active' : 'menu-btn';
+            document.getElementById('b1').className = (idx === 1) ? 'menu-btn active' : 'menu-btn';
+            document.getElementById('b2').className = (idx === 2) ? 'menu-btn active' : 'menu-btn';
+            
+            if(idx > 0) window.dessiner();
+        };
+
+        window.sauver = function() {
+            var dateV = document.getElementById('in-date').value;
+            var projV = document.getElementById('in-proj').value.toUpperCase() || "DIVERS";
+            var typeV = document.getElementById('in-type').value;
+
+            if(!dateV) { alert("Mettre une date"); return; }
+
+            // Calcul simplifié
+            var s1 = document.getElementById('s1').value;
+            var e1 = document.getElementById('e1').value;
+            var s2 = document.getElementById('s2').value;
+            var e2 = document.getElementById('e2').value;
+
+            var entry = {
+                id: new Date().getTime(),
+                date: dateV,
+                proj: projV,
+                type: typeV,
+                hStr: s1 + "-" + e1 + " / " + s2 + "-" + e2,
+                val: 0 // Simplifié pour le test
+            };
+
+            db.unshift(entry);
+            localStorage.setItem('PT130_DB', JSON.stringify(db));
+            alert("Enregistré !");
+            window.go(0);
+        };
+
+        window.dessiner = function() {
+            var htmlB = "";
+            for(var i=0; i<db.length; i++) {
+                htmlB += '<div class="card">' + 
+                            '<b>' + db[i].proj + '</b><br>' + 
+                            db[i].date + ' | ' + db[i].hStr + 
+                         '</div>';
+            }
+            document.getElementById('bilan-content').innerHTML = htmlB || "Aucune donnée";
+        };
+
+        document.getElementById('in-date').valueAsDate = new Date();
+    </script>
+</body>
+</html>
