@@ -3,31 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrack V68-FIX</title>
+    <title>ProTrack V68.1</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background: #0f172a; color: white; font-family: sans-serif; margin: 0; padding-bottom: 90px; }
-        
-        /* Navigation Base V68 */
         .nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: #1e293b; display: flex; border-top: 1px solid #475569; z-index: 9999; }
         .nav-item { flex: 1; color: #64748b; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px; cursor: pointer; }
         .nav-item.active { color: #3b82f6; border-top: 3px solid #3b82f6; background: rgba(59, 130, 246, 0.1); }
-
         .page { display: none; padding: 15px; }
         .active-page { display: block !important; }
-
         .card { background: #1e293b; border-radius: 10px; padding: 15px; margin-bottom: 15px; border: 1px solid #334155; }
         .input { background: #0f172a; border: 1px solid #475569; color: white; border-radius: 6px; padding: 12px; width: 100%; font-size: 16px; margin-bottom: 10px; display: block; }
         .btn { background: #2563eb; color: white; padding: 15px; border-radius: 10px; font-weight: bold; border: none; font-size: 16px; width: 100%; }
         .btn-sec { background: #334155; padding: 10px; font-size: 10px; color: white; border-radius: 5px; text-align: center; font-weight: bold; flex: 1; border: none; }
-        
-        /* Styles détails bilan */
         .row-item { border-bottom: 1px solid #475569; padding: 10px 0; }
-        .row-item:last-child { border-bottom: none; }
         .blue-h { color: #3b82f6; font-weight: bold; font-size: 11px; display: block; margin-top: 4px; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .label { font-size: 11px; color: #94a3b8; margin-bottom: 5px; text-transform: uppercase; }
-        
         .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:10000; padding:20px; align-items:center; }
     </style>
 </head>
@@ -70,9 +62,7 @@
         <div id="list-bilan"></div>
     </div>
 
-    <div id="pg2" class="page">
-        <div id="list-archive"></div>
-    </div>
+    <div id="pg2" class="page"><div id="list-archive"></div></div>
 
     <div id="set-modal" class="modal">
         <div class="card" style="width:100%;">
@@ -89,8 +79,7 @@
         let rates = JSON.parse(localStorage.getItem('PT_V68_RATES')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
 
         function go(n) {
-            const pgs = ['pg0','pg1','pg2'];
-            pgs.forEach((p, i) => {
+            ['pg0','pg1','pg2'].forEach((p, i) => {
                 document.getElementById(p).classList.toggle('active-page', i === n);
                 document.getElementById('nv'+i).classList.toggle('active', i === n);
             });
@@ -103,32 +92,41 @@
             const t = document.getElementById('in-type').value;
             if(!d) return alert("Date manquante");
 
-            const toM = (v) => { if(!v) return 0; const s = v.split(':'); return parseInt(s[0])*60+parseInt(s[1]); };
-            const s1=toM(document.getElementById('s1').value), e1=toM(document.getElementById('e1').value);
-            const s2=toM(document.getElementById('s2').value), e2=toM(document.getElementById('e2').value);
+            const toM = (v) => { if(!v) return -1; const s = v.split(':'); return parseInt(s[0])*60+parseInt(s[1]); };
+            let s1=toM(document.getElementById('s1').value), e1=toM(document.getElementById('e1').value);
+            let s2=toM(document.getElementById('s2').value), e2=toM(document.getElementById('e2').value);
             
             let val=0, hStr="", dur=0;
             if(t.includes('Pose') || t === 'Jours OFF') {
                 val = t==='Pose Piges' ? rates.piges : (t==='Pose Omnes' ? rates.omnes : rates.off);
                 hStr = "FORFAIT";
             } else {
-                let m1 = (e1 > s1) ? (e1-s1) : 0;
-                let m2 = (e2 > s2) ? (e2-s2) : 0;
-                dur = (m1+m2)/60;
-                hStr = (document.getElementById('s1').value || "00:00") + "-" + (document.getElementById('e1').value || "00:00") + " / " + (document.getElementById('s2').value || "00:00") + "-" + (document.getElementById('e2').value || "00:00");
+                // Logique de calcul intelligente
+                let totalMin = 0;
+                if(s1 > -1 && e1 > s1) totalMin += (e1 - s1);
+                if(s2 > -1 && e2 > s2) totalMin += (e2 - s2);
+                // Cas journée continue (S1 et E2 remplis uniquement)
+                if(s1 > -1 && e2 > s1 && e1 === -1 && s2 === -1) totalMin = (e2 - s1);
+
+                dur = totalMin / 60;
+                hStr = (document.getElementById('s1').value || "??") + " > " + (document.getElementById('e2').value || document.getElementById('e1').value || "??");
                 val = dur * (t==='Production' ? rates.prod : rates.trajet);
             }
 
             db.unshift({ id: Date.now(), d, p, t, val, hStr, dur });
             localStorage.setItem('PT_V68_DATA', JSON.stringify(db));
-            document.getElementById('in-proj').value = "";
+            ['in-proj','s1','e1','s2','e2'].forEach(id => document.getElementById(id).value = "");
             draw();
             alert("Enregistré");
         }
 
         function draw() {
-            document.getElementById('recent-list').innerHTML = db.slice(0, 3).map(o => `
-                <div class="card" style="font-size:12px; border-left: 3px solid #3b82f6;"><b>${o.p}</b> - ${o.val.toFixed(2)}€</div>
+            // Liste Saisie avec Détails
+            document.getElementById('recent-list').innerHTML = db.slice(0, 5).map(o => `
+                <div class="card" style="font-size:12px; border-left: 3px solid #3b82f6;">
+                    <div style="display:flex; justify-content:space-between;"><b>${o.p}</b> <span>${o.val.toFixed(2)}€</span></div>
+                    <div style="color:#94a3b8; font-size:10px; margin-top:5px;">${o.d.split('-').reverse().join('/')} | ${o.hStr}</div>
+                </div>
             `).join('');
 
             let hB="", hA="", tAF=0, tF=0;
@@ -179,7 +177,6 @@
             document.getElementById('set-modal').style.display = 'none';
             draw();
         }
-
         document.getElementById('in-date').valueAsDate = new Date();
         draw();
     </script>
