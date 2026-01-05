@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrack ULTIMATE</title>
+    <title>ProTrack V80</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background: #0f172a; color: white; font-family: sans-serif; margin: 0; padding-bottom: 90px; }
         
-        .nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: #1e293b; display: flex; border-top: 2px solid #3b82f6; z-index: 9999; }
-        .nav-item { flex: 1; color: #94a3b8; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; }
-        .nav-item.active { color: #3b82f6; background: rgba(59, 130, 246, 0.1); }
+        .nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: #1e293b; display: flex; border-top: 1px solid #475569; z-index: 9999; }
+        .nav-item { flex: 1; color: #64748b; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px; cursor: pointer; }
+        .nav-item.active { color: #3b82f6; border-top: 3px solid #3b82f6; background: rgba(59, 130, 246, 0.1); }
 
         .page { display: none; padding: 15px; }
         .active-page { display: block !important; }
@@ -25,6 +25,8 @@
         .blue-h { color: #3b82f6; font-weight: bold; font-size: 11px; display: block; margin-top: 4px; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .label { font-size: 11px; color: #94a3b8; margin-bottom: 5px; text-transform: uppercase; }
+
+        .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:10000; padding:20px; align-items:center; justify-content:center; }
     </style>
 </head>
 <body>
@@ -36,6 +38,7 @@
     </div>
 
     <div id="pg0" class="page active-page">
+        <div onclick="openSet()" style="font-size:28px; margin-bottom:15px; cursor:pointer; width: fit-content;">⚙️</div>
         <div class="card">
             <div class="grid">
                 <input type="date" id="in-date" class="input">
@@ -60,8 +63,8 @@
     <div id="pg1" class="page">
         <button class="btn-save" onclick="exportData()">📤 COPIER LES DONNÉES</button>
         <div class="grid" style="margin-bottom:15px;">
-            <div class="card" style="margin:0; text-align:center;"><div class="label">À Facturer</div><div id="sum-af" style="font-size:20px; font-weight:bold;">0€</div></div>
-            <div class="card" style="margin:0; text-align:center;"><div class="label" style="color:#10b981;">Facturé</div><div id="sum-f" style="font-size:20px; font-weight:bold; color:#10b981;">0€</div></div>
+            <div class="card" style="margin:0; text-align:center;"><div class="label">À Facturer</div><div id="sum-af" style="font-size:18px; font-weight:bold;">0€</div></div>
+            <div class="card" style="margin:0; text-align:center;"><div class="label" style="color:#10b981;">Facturé</div><div id="sum-f" style="font-size:18px; font-weight:bold; color:#10b981;">0€</div></div>
         </div>
         <div id="list-bilan"></div>
     </div>
@@ -70,17 +73,76 @@
         <div id="list-archive"></div>
     </div>
 
+    <div id="set-modal" class="modal">
+        <div class="card" style="width:100%;">
+            <h3 style="margin-top:0;">Tarifs</h3>
+            <div id="price-inputs"></div>
+            <button class="btn" onclick="closeSet()">ENREGISTRER & FERMER</button>
+        </div>
+    </div>
+
     <script>
-        // Initialisation propre
-        let data = JSON.parse(localStorage.getItem('PT_DATA_V1') || '[]');
-        let billed = JSON.parse(localStorage.getItem('PT_BILL_V1') || '[]');
-        let archived = JSON.parse(localStorage.getItem('PT_ARCH_V1') || '[]');
-        const rates = { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
+        let data = JSON.parse(localStorage.getItem('PT_V80_DATA') || '[]');
+        let billed = JSON.parse(localStorage.getItem('PT_V80_BILL') || '[]');
+        let archived = JSON.parse(localStorage.getItem('PT_V80_ARCH') || '[]');
+        let rates = JSON.parse(localStorage.getItem('PT_V80_RATES')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
 
         function go(n) {
-            // Navigation simplifiée au maximum
-            document.querySelectorAll('.page').forEach((p, i) => {
-                p.classList.toggle('active-page', i === n);
+            const pages = ['pg0', 'pg1', 'pg2'];
+            pages.forEach((p, i) => {
+                document.getElementById(p).classList.toggle('active-page', i === n);
+                document.getElementById('nv' + i).classList.toggle('active', i === n);
             });
-            document.querySelectorAll('.nav-item').forEach((v, i) => {
-                v
+            draw();
+        }
+
+        function addItem() {
+            const d = document.getElementById('in-date').value;
+            const p = document.getElementById('in-proj').value.toUpperCase() || "DIVERS";
+            const t = document.getElementById('in-type').value;
+
+            if(!d) return alert("Indique une date");
+
+            const toM = (v) => { if(!v) return 0; const s = v.split(':'); return parseInt(s[0])*60+parseInt(s[1]); };
+            const s1=toM(document.getElementById('s1').value), e1=toM(document.getElementById('e1').value);
+            const s2=toM(document.getElementById('s2').value), e2=toM(document.getElementById('e2').value);
+            
+            let val=0, hStr="", dur=0;
+
+            if(t.includes('Pose') || t === 'Jours OFF') {
+                val = t==='Pose Piges' ? rates.piges : (t==='Pose Omnes' ? rates.omnes : rates.off);
+                hStr = "FORFAIT";
+            } else {
+                let m1 = (e1 > s1) ? (e1-s1) : 0;
+                let m2 = (e2 > s2) ? (e2-s2) : 0;
+                dur = (m1+m2)/60;
+                let t1 = m1>0 ? document.getElementById('s1').value+"-"+document.getElementById('e1').value : "";
+                let t2 = m2>0 ? document.getElementById('s2').value+"-"+document.getElementById('e2').value : "";
+                hStr = (t1 && t2) ? t1+" / "+t2 : (t1 || t2 || "00:00");
+                val = dur * (t==='Production' ? rates.prod : rates.trajet);
+            }
+
+            data.unshift({ id: Date.now(), d, p, t, val, hStr, dur });
+            localStorage.setItem('PT_V80_DATA', JSON.stringify(data));
+            
+            ['in-proj','s1','e1','s2','e2'].forEach(id => document.getElementById(id).value = "");
+            draw();
+        }
+
+        function draw() {
+            document.getElementById('recent-list').innerHTML = data.slice(0, 3).map(o => `
+                <div class="card" style="font-size:12px; border-left: 3px solid #3b82f6;"><b>${o.p}</b> - ${o.val.toFixed(2)}€ <span onclick="delItem(${o.id})" style="float:right">🗑️</span></div>
+            `).join('');
+
+            let hB="", hA="", tAF=0, tF=0;
+            const groups = data.reduce((acc, o) => { (acc[o.p] = acc[o.p] || []).push(o); return acc; }, {});
+
+            for (let proj in groups) {
+                const isB = billed.includes(proj);
+                const isA = archived.includes(proj);
+                const total = groups[proj].reduce((s, o) => s + o.val, 0);
+
+                if(!isA) { if(isB) tF += total; else tAF += total; }
+
+                const lines = groups[proj].map(o => `
+                    <div class="row-item">
