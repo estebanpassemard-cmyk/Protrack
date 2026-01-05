@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrack V73.HYBRID</title>
+    <title>ProTrack V74.SMART</title>
     <style>
-        /* Le style reste identique pour la cohérence */
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background: #0f172a; color: white; font-family: sans-serif; margin: 0; padding-bottom: 90px; }
         .version-tag { position: absolute; top: 10px; right: 10px; font-size: 11px; color: #3b82f6; font-weight: bold; }
@@ -34,7 +33,7 @@
 </head>
 <body>
 
-    <div class="version-tag">V73.HYBRID</div>
+    <div class="version-tag">V74.SMART</div>
 
     <div class="nav">
         <div id="nv0" class="nav-item active" onclick="go(0)">Saisie</div>
@@ -67,14 +66,14 @@
                 <label for="check-long">Journée à rallonge</label>
             </div>
 
-            <div class="label">Début Matin</div>
+            <div class="label">Session 1 (Début)</div>
             <div class="flex-row"><input type="time" id="s1" class="input"><input type="time" id="e1" class="input"></div>
             
-            <div class="label">Fin Journée (ou Session 2)</div>
+            <div class="label">Session 2 (Fin ou Pause)</div>
             <div class="flex-row"><input type="time" id="s2" class="input"><input type="time" id="e2" class="input"></div>
             
             <div id="bloc3">
-                <div class="label">Session 3 (Nuit)</div>
+                <div class="label">Session 3 (Nuit / Rallonge)</div>
                 <div class="flex-row"><input type="time" id="s3" class="input"><input type="time" id="e3" class="input"></div>
             </div>
 
@@ -156,25 +155,27 @@
                     return diff;
                 }
 
-                // CAS SPÉCIAL : s1 et e2 remplis (saut de ligne pour journée continue)
-                if (s1 > -1 && e2 > -1 && e1 === -1 && s2 === -1) {
+                var m1 = calcDur(s1, e1);
+                var m2 = calcDur(s2, e2);
+                var m3 = calcDur(s3, e3);
+
+                // NOUVELLE LOGIQUE SMART :
+                // On détecte la "Journée Continue" (s1 et e2 remplis, mais e1 et s2 vides ET s3/e3 vides)
+                if (s1 > -1 && e2 > -1 && e1 === -1 && s2 === -1 && s3 === -1) {
                     let totalM = e2 - s1;
                     if (totalM < 0) totalM += 1440;
                     dur = totalM / 60;
                     hStr = document.getElementById('s1').value + " > " + document.getElementById('e2').value;
                 } else {
-                    var m1 = calcDur(s1, e1);
-                    var m2 = calcDur(s2, e2);
-                    var m3 = calcDur(s3, e3);
-                    
+                    // Sinon on additionne tout ce qui existe
                     dur = (m1 + m2 + m3) / 60;
-                    
                     var parts = [];
                     if(m1 > 0) parts.push(document.getElementById('s1').value + "-" + document.getElementById('e1').value);
                     if(m2 > 0) parts.push(document.getElementById('s2').value + "-" + document.getElementById('e2').value);
                     if(m3 > 0) parts.push(document.getElementById('s3').value + "-" + document.getElementById('e3').value);
                     hStr = parts.join(' | ');
                 }
+                
                 val = dur * (t==='Production' ? rates.prod : rates.trajet);
             }
 
@@ -192,6 +193,7 @@
             draw();
         }
 
+        // Le reste des fonctions reste identique...
         function generatePrintable() {
             if(db.length === 0) return;
             var txt = "--- RÉCAPITULATIF PROTRACK ---\n\n";
@@ -208,7 +210,7 @@
         }
 
         function del(id) {
-            if(confirm("Supprimer définitivement ?")) {
+            if(confirm("Supprimer ?")) {
                 db = db.filter(function(o) { return o.id !== id; });
                 localStorage.setItem('P69S_DATA', JSON.stringify(db));
                 draw();
@@ -219,18 +221,13 @@
             var plist = [];
             for(var i=0; i<db.length; i++) { if(plist.indexOf(db[i].p) === -1) plist.push(db[i].p); }
             document.getElementById('proj-list').innerHTML = plist.map(function(x) { return '<option value="'+x+'">'; }).join('');
-            
             var recentH = "";
             var limit = db.length > 3 ? 3 : db.length;
             for(var r=0; r<limit; r++){
                 var oR = db[r];
-                recentH += '<div class="card" style="font-size:12px; margin-bottom:10px;">' +
-                           '<b>'+oR.p+'</b> <span style="float:right;">'+oR.val.toFixed(2)+'€</span><br>' +
-                           '<span style="color:#94a3b8; font-size:10px;">'+oR.d.split('-').reverse().join('/')+' | '+oR.hStr+'</span>' +
-                           '<span class="blue-info">'+ (oR.dur > 0 ? oR.dur.toFixed(2)+'H' : 'FORFAIT') +' ('+oR.t+')</span></div>';
+                recentH += '<div class="card" style="font-size:12px; margin-bottom:10px;"><b>'+oR.p+'</b><span style="float:right;">'+oR.val.toFixed(2)+'€</span><br><span style="color:#94a3b8; font-size:10px;">'+oR.d.split('-').reverse().join('/')+' | '+oR.hStr+'</span><span class="blue-info">'+ (oR.dur > 0 ? oR.dur.toFixed(2)+'H' : 'FORFAIT') +' ('+oR.t+')</span></div>';
             }
-            document.getElementById('recent-list').innerHTML = recentH || '<p style="font-size:11px; color:#64748b;">Aucune saisie.</p>';
-
+            document.getElementById('recent-list').innerHTML = recentH || "Aucune saisie.";
             var hB="", hA="", tAF=0, tF=0;
             var groups = {};
             for(var j=0; j<db.length; j++) { var o = db[j]; groups[o.p] = groups[o.p] || []; groups[o.p].push(o); }
@@ -240,19 +237,10 @@
                 for(var k=0; k<groups[proj].length; k++) {
                     var it = groups[proj][k];
                     total += it.val;
-                    lines += '<div class="row-item"><div style="display:flex; justify-content:space-between;">' +
-                             '<div><span style="font-weight:bold;">' + it.d.split('-').reverse().join('/') + '</span><br>' +
-                             '<span style="color:#94a3b8; font-size:11px;">' + it.hStr + '</span></div>' +
-                             '<div><b>' + it.val.toFixed(2) + '€</b><button class="del-btn" onclick="del(' + it.id + ')"> 🗑️</button></div></div>' +
-                             '<span class="blue-info">' + (it.dur > 0 ? it.dur.toFixed(2)+'H' : 'FORFAIT') + ' (' + it.t + ')</span></div>';
+                    lines += '<div class="row-item"><div style="display:flex; justify-content:space-between;"><div><b>' + it.d.split('-').reverse().join('/') + '</b><br><span style="color:#94a3b8; font-size:11px;">' + it.hStr + '</span></div><div><b>' + it.val.toFixed(2) + '€</b><button class="del-btn" onclick="del(' + it.id + ')">🗑️</button></div></div><span class="blue-info">' + (it.dur > 0 ? it.dur.toFixed(2)+'H' : 'FORFAIT') + ' (' + it.t + ')</span></div>';
                 }
                 if(!isA) { if(isB) tF += total; else tAF += total; }
-                var card = '<div class="card" style="border-left: 5px solid ' + (isB ? '#10b981' : '#3b82f6') + '">' +
-                    '<div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:10px; border-bottom:1px solid #475569; padding-bottom:8px;">' +
-                    '<span>' + proj + '</span><span>' + total.toFixed(2) + '€</span></div>' +
-                    lines + '<div style="display:flex; gap:10px; margin-top:15px;">' +
-                    '<button class="btn-sec" onclick="tB(\'' + proj + '\')">' + (isB ? 'À FACTURER' : 'FACTURÉ') + '</button>' +
-                    '<button class="btn-sec" onclick="tA(\'' + proj + '\')">' + (isA ? 'RÉACTIVER' : 'ARCHIVER') + '</button></div></div>';
+                var card = '<div class="card" style="border-left: 5px solid ' + (isB ? '#10b981' : '#3b82f6') + '"><div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:10px; border-bottom:1px solid #475569; padding-bottom:8px;"><span>' + proj + '</span><span>' + total.toFixed(2) + '€</span></div>' + lines + '<div style="display:flex; gap:10px; margin-top:15px;"><button class="btn-sec" onclick="tB(\'' + proj + '\')">' + (isB ? 'À FACTURER' : 'FACTURÉ') + '</button><button class="btn-sec" onclick="tA(\'' + proj + '\')">' + (isA ? 'RÉACTIVER' : 'ARCHIVER') + '</button></div></div>';
                 if(isA) hA += card; else hB += card;
             }
             document.getElementById('list-bilan').innerHTML = hB || "Vide";
@@ -263,7 +251,6 @@
 
         window.tB = function(p) { if(billed.indexOf(p) > -1) billed = billed.filter(function(x){return x!==p;}); else billed.push(p); localStorage.setItem('P69S_BILL', JSON.stringify(billed)); draw(); };
         window.tA = function(p) { if(archived.indexOf(p) > -1) archived = archived.filter(function(x){return x!==p;}); else archived.push(p); localStorage.setItem('P69S_ARCH', JSON.stringify(archived)); draw(); };
-
         function openSet() {
             var h = "";
             for(var k in rates) { h += '<label class="label">'+k+'</label><input type="number" id="rt-'+k+'" value="'+rates[k]+'" class="input">'; }
