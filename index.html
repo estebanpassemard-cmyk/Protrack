@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrack V69.FLUID</title>
+    <title>ProTrack V70.FIX</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background: #0f172a; color: white; font-family: sans-serif; margin: 0; padding-bottom: 90px; }
@@ -31,7 +31,7 @@
 </head>
 <body>
 
-    <div class="version-tag">V69.FLUID</div>
+    <div class="version-tag">V70.FIX</div>
 
     <div class="nav">
         <div id="nv0" class="nav-item active" onclick="go(0)">Saisie</div>
@@ -119,26 +119,36 @@
             var p = document.getElementById('in-proj').value.toUpperCase() || "DIVERS";
             var t = document.getElementById('in-type').value;
             if(!d) return; 
+
             var s1=toM(document.getElementById('s1').value), e1=toM(document.getElementById('e1').value);
             var s2=toM(document.getElementById('s2').value), e2=toM(document.getElementById('e2').value);
+            
             var val=0, dur=0, hStr="";
+
             if(t.indexOf('Pose') > -1 || t === 'Jours OFF') {
                 val = (t==='Pose Piges') ? rates.piges : (t==='Pose Omnes' ? rates.omnes : rates.off);
                 hStr = "FORFAIT";
             } else {
                 var m1 = (s1 > -1 && e1 > s1) ? (e1 - s1) : 0;
                 var m2 = (s2 > -1 && e2 > s2) ? (e2 - s2) : 0;
-                if (m1 > 0 && m2 > 0) {
-                    dur = (m1 + m2) / 60;
-                    hStr = document.getElementById('s1').value + "-" + document.getElementById('e1').value + " | " + document.getElementById('s2').value + "-" + document.getElementById('e2').value;
-                } else if (s1 > -1 && e2 > s1) {
+                
+                if (s1 > -1 && e2 > s1 && e1 === -1 && s2 === -1) {
                     dur = (e2 - s1) / 60;
                     hStr = document.getElementById('s1').value + " > " + document.getElementById('e2').value;
-                } else if (m1 > 0) {
-                    dur = m1 / 60; hStr = document.getElementById('s1').value + " > " + document.getElementById('e1').value;
+                } else {
+                    dur = (m1 + m2) / 60;
+                    var p1 = m1 > 0 ? (document.getElementById('s1').value + "-" + document.getElementById('e1').value) : "";
+                    var p2 = m2 > 0 ? (document.getElementById('s2').value + "-" + document.getElementById('e2').value) : "";
+                    hStr = (p1 && p2) ? p1 + " | " + p2 : (p1 || p2);
                 }
                 val = dur * (t==='Production' ? rates.prod : rates.trajet);
             }
+
+            if(dur <= 0 && hStr !== "FORFAIT") {
+                alert("Vérifiez les horaires !");
+                return;
+            }
+
             db.unshift({ id: new Date().getTime(), d: d, p: p, t: t, val: val, hStr: hStr, dur: dur });
             localStorage.setItem('P69S_DATA', JSON.stringify(db));
             document.getElementById('in-proj').value = "";
@@ -176,7 +186,6 @@
             var plist = [];
             for(var i=0; i<db.length; i++) { if(plist.indexOf(db[i].p) === -1) plist.push(db[i].p); }
             document.getElementById('proj-list').innerHTML = plist.map(function(x) { return '<option value="'+x+'">'; }).join('');
-
             var recentH = "";
             var limit = db.length > 3 ? 3 : db.length;
             for(var r=0; r<limit; r++){
@@ -187,7 +196,6 @@
                            '<span class="blue-info">'+ (oR.dur > 0 ? oR.dur.toFixed(2)+'H' : 'FORFAIT') +' ('+oR.t+')</span></div>';
             }
             document.getElementById('recent-list').innerHTML = recentH || '<p style="font-size:11px; color:#64748b;">Aucune saisie.</p>';
-
             var hB="", hA="", tAF=0, tF=0;
             var groups = {};
             for(var j=0; j<db.length; j++) { var o = db[j]; groups[o.p] = groups[o.p] || []; groups[o.p].push(o); }
@@ -235,7 +243,6 @@
         }
         function openSave() { document.getElementById('save-modal').style.display = 'flex'; }
         function closeSave() { document.getElementById('save-modal').style.display = 'none'; }
-
         document.getElementById('in-date').valueAsDate = new Date();
         draw();
     </script>
