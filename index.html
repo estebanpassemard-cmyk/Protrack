@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrack V72.ULTRA</title>
+    <title>ProTrack V73.HYBRID</title>
     <style>
+        /* Le style reste identique pour la cohérence */
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background: #0f172a; color: white; font-family: sans-serif; margin: 0; padding-bottom: 90px; }
         .version-tag { position: absolute; top: 10px; right: 10px; font-size: 11px; color: #3b82f6; font-weight: bold; }
@@ -33,7 +34,7 @@
 </head>
 <body>
 
-    <div class="version-tag">V72.ULTRA</div>
+    <div class="version-tag">V73.HYBRID</div>
 
     <div class="nav">
         <div id="nv0" class="nav-item active" onclick="go(0)">Saisie</div>
@@ -66,20 +67,19 @@
                 <label for="check-long">Journée à rallonge</label>
             </div>
 
-            <div class="label">Session 1</div>
+            <div class="label">Début Matin</div>
             <div class="flex-row"><input type="time" id="s1" class="input"><input type="time" id="e1" class="input"></div>
             
-            <div class="label">Session 2</div>
+            <div class="label">Fin Journée (ou Session 2)</div>
             <div class="flex-row"><input type="time" id="s2" class="input"><input type="time" id="e2" class="input"></div>
             
             <div id="bloc3">
-                <div class="label">Session 3 (Nuit / Rallonge)</div>
+                <div class="label">Session 3 (Nuit)</div>
                 <div class="flex-row"><input type="time" id="s3" class="input"><input type="time" id="e3" class="input"></div>
             </div>
 
             <button class="btn" onclick="addItem()">ENREGISTRER</button>
         </div>
-        <div class="label">Dernières saisies</div>
         <div id="recent-list"></div>
     </div>
 
@@ -104,7 +104,6 @@
     <div id="save-modal" class="modal">
         <div class="card" style="width:100%; margin-top:20px;">
             <h3 style="margin-top:0; color:#10b981;">RÉCAPITULATIF NOTES</h3>
-            <p style="font-size:11px; color:#94a3b8; margin-bottom:10px;">Générez et copiez le texte ci-dessous.</p>
             <button class="btn-save" onclick="generatePrintable()">💾 GÉNÉRER LE RÉCAPITULATIF</button>
             <textarea id="backup-zone" readonly></textarea>
             <button class="btn" style="background:#475569; margin-top:15px;" onclick="closeSave()">FERMER</button>
@@ -157,18 +156,25 @@
                     return diff;
                 }
 
-                var m1 = calcDur(s1, e1);
-                var m2 = calcDur(s2, e2);
-                var m3 = calcDur(s3, e3);
-                
-                dur = (m1 + m2 + m3) / 60;
-                
-                var parts = [];
-                if(m1 > 0) parts.push(document.getElementById('s1').value + "-" + document.getElementById('e1').value);
-                if(m2 > 0) parts.push(document.getElementById('s2').value + "-" + document.getElementById('e2').value);
-                if(m3 > 0) parts.push(document.getElementById('s3').value + "-" + document.getElementById('e3').value);
-                hStr = parts.join(' | ');
-
+                // CAS SPÉCIAL : s1 et e2 remplis (saut de ligne pour journée continue)
+                if (s1 > -1 && e2 > -1 && e1 === -1 && s2 === -1) {
+                    let totalM = e2 - s1;
+                    if (totalM < 0) totalM += 1440;
+                    dur = totalM / 60;
+                    hStr = document.getElementById('s1').value + " > " + document.getElementById('e2').value;
+                } else {
+                    var m1 = calcDur(s1, e1);
+                    var m2 = calcDur(s2, e2);
+                    var m3 = calcDur(s3, e3);
+                    
+                    dur = (m1 + m2 + m3) / 60;
+                    
+                    var parts = [];
+                    if(m1 > 0) parts.push(document.getElementById('s1').value + "-" + document.getElementById('e1').value);
+                    if(m2 > 0) parts.push(document.getElementById('s2').value + "-" + document.getElementById('e2').value);
+                    if(m3 > 0) parts.push(document.getElementById('s3').value + "-" + document.getElementById('e3').value);
+                    hStr = parts.join(' | ');
+                }
                 val = dur * (t==='Production' ? rates.prod : rates.trajet);
             }
 
@@ -177,7 +183,6 @@
             db.unshift({ id: new Date().getTime(), d: d, p: p, t: t, val: val, hStr: hStr, dur: dur });
             localStorage.setItem('P69S_DATA', JSON.stringify(db));
             
-            // Reset
             document.getElementById('in-proj').value = "";
             document.getElementById('s1').value = ""; document.getElementById('e1').value = "";
             document.getElementById('s2').value = ""; document.getElementById('e2').value = "";
@@ -199,9 +204,7 @@
                 var archTag = (archived.indexOf(o.p) > -1) ? "[ARCHIVÉ] " : "";
                 txt += dateFr + " - " + archTag + o.p + "\n   " + o.hStr + " (" + durStr + o.t + ") -> " + o.val.toFixed(2) + "€\n\n";
             }
-            var area = document.getElementById('backup-zone');
-            area.value = txt;
-            area.select();
+            document.getElementById('backup-zone').value = txt;
         }
 
         function del(id) {
@@ -216,6 +219,7 @@
             var plist = [];
             for(var i=0; i<db.length; i++) { if(plist.indexOf(db[i].p) === -1) plist.push(db[i].p); }
             document.getElementById('proj-list').innerHTML = plist.map(function(x) { return '<option value="'+x+'">'; }).join('');
+            
             var recentH = "";
             var limit = db.length > 3 ? 3 : db.length;
             for(var r=0; r<limit; r++){
@@ -226,6 +230,7 @@
                            '<span class="blue-info">'+ (oR.dur > 0 ? oR.dur.toFixed(2)+'H' : 'FORFAIT') +' ('+oR.t+')</span></div>';
             }
             document.getElementById('recent-list').innerHTML = recentH || '<p style="font-size:11px; color:#64748b;">Aucune saisie.</p>';
+
             var hB="", hA="", tAF=0, tF=0;
             var groups = {};
             for(var j=0; j<db.length; j++) { var o = db[j]; groups[o.p] = groups[o.p] || []; groups[o.p].push(o); }
