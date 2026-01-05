@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrack V85</title>
+    <title>ProTrack V86</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background: #0f172a; color: white; font-family: sans-serif; margin: 0; padding-bottom: 90px; }
@@ -35,7 +35,11 @@
         .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:10000; padding:15px; align-items:start; overflow-y: auto; }
         textarea { background: #0f172a; color: #10b981; border: 1px solid #475569; width: 100%; height: 350px; font-family: monospace; font-size: 11px; padding: 10px; margin-top: 10px; border-radius: 6px; line-height: 1.5; }
         .top-bar { display: flex; gap: 10px; margin-bottom: 15px; }
-        .icon-btn { background: #1e293b; padding: 10px; border-radius: 10px; cursor: pointer; font-size: 22px; border: 1px solid #334155; }
+        .icon-btn { background: #1e293b; padding: 10px; border-radius: 10px; cursor: pointer; font-size: 22px; border: 1px solid #334155; position: relative; }
+        
+        /* BADGE SAUVEGARDE */
+        .save-badge { position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; font-weight: bold; border: 1px solid #0f172a; }
+
         .toggle-row { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; font-size: 13px; color: #3b82f6; font-weight: bold; }
         #bloc3 { display: none; }
     </style>
@@ -43,10 +47,12 @@
 <body>
 
     <div id="pg0" class="page" style="display:block;">
-        <div class="version-tag">V85</div>
+        <div class="version-tag">V86</div>
         <div class="top-bar">
             <div class="icon-btn" onclick="openSet()">⚙️</div>
-            <div class="icon-btn" onclick="openSave()">💾</div>
+            <div class="icon-btn" onclick="openSave()">
+                💾<span id="save-counter" class="save-badge">0</span>
+            </div>
         </div>
         
         <div class="card">
@@ -81,7 +87,7 @@
 
     <div id="pg1" class="page">
         <div class="grid" style="margin-bottom:15px;">
-            <div class="card" style="margin:0; text-align:center;"><div class="label">À Facturer</div><div id="sum-af" style="font-size:18px; font-weight:bold; color:#3b82f6;">0€</div></div>
+            <div class="card" style="margin:0; text-align:center;"><div class="label">À Facturer</div><div id="sum-af" style="font-size:18px; font-weight:bold; color:#ef4444;">0€</div></div>
             <div class="card" style="margin:0; text-align:center;"><div class="label" style="color:#10b981;">Facturé</div><div id="sum-f" style="font-size:18px; font-weight:bold; color:#10b981;">0€</div></div>
         </div>
         <div id="list-bilan"></div>
@@ -105,6 +111,7 @@
         var billed = JSON.parse(localStorage.getItem('P69S_BILL') || '[]');
         var archived = JSON.parse(localStorage.getItem('P69S_ARCH') || '[]');
         var rates = JSON.parse(localStorage.getItem('P69S_RT')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
+        var lastSave = localStorage.getItem('P69S_LSAVE') || new Date().getTime();
 
         function go(n) {
             var pgs = ['pg0', 'pg1', 'pg2'];
@@ -112,7 +119,14 @@
                 document.getElementById(pgs[i]).style.display = (i === n) ? 'block' : 'none';
                 document.getElementById('nv' + i).className = (i === n) ? 'nav-item active' : 'nav-item';
             }
+            updateSaveCounter();
             draw();
+        }
+
+        function updateSaveCounter() {
+            var diff = new Date().getTime() - lastSave;
+            var days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            document.getElementById('save-counter').innerText = days;
         }
 
         function toggleLong() { document.getElementById('bloc3').style.display = document.getElementById('check-long').checked ? 'block' : 'none'; }
@@ -196,24 +210,23 @@
         function closeSave() { document.getElementById('save-modal').style.display = 'none'; }
 
         function generatePrintable() { 
-            var groups = {};
-            // Groupement par projet
-            db.forEach(it => { groups[it.p] = groups[it.p] || []; groups[it.p].push(it); });
+            lastSave = new Date().getTime();
+            localStorage.setItem('P69S_LSAVE', lastSave);
+            updateSaveCounter();
             
+            var groups = {};
+            db.forEach(it => { groups[it.p] = groups[it.p] || []; groups[it.p].push(it); });
             var txt = "--- RÉCAPITULATIF CHRONOLOGIQUE ---\n\n";
             for (var proj in groups) {
                 var pTot = 0;
                 txt += "PROJET : " + proj + "\n";
                 txt += "--------------------------------\n";
-                
-                // Tri des lignes par date (ascendant)
                 var sortedLines = groups[proj].sort((a, b) => new Date(a.d) - new Date(b.d));
-                
                 sortedLines.forEach(i => {
                     var d = i.d.split('-').reverse().join('/');
                     var h = i.dur > 0 ? "(" + i.dur.toFixed(2) + "h)" : "";
                     txt += `${d} | ${i.t} ${h}\n`;
-                    txt += `Détail : ${i.hStr}\n`; // Horaires précis
+                    txt += `Détail : ${i.hStr}\n`;
                     txt += `Prix   : ${i.val.toFixed(2)}€\n`;
                     txt += `----------------\n`;
                     pTot += i.val;
@@ -224,6 +237,7 @@
         }
         
         document.getElementById('in-date').valueAsDate = new Date();
+        updateSaveCounter();
         draw();
     </script>
 </body>
