@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrack V69.PREMIUM</title>
+    <title>ProTrack V69.FIX</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background: #0f172a; color: white; font-family: sans-serif; margin: 0; padding-bottom: 90px; }
@@ -20,17 +20,17 @@
         .btn-save { background: #10b981; color: white; padding: 10px; border-radius: 6px; font-weight: bold; border: none; width: 100%; margin-bottom: 15px; }
         .row-item { border-bottom: 1px solid #475569; padding: 10px 0; }
         .blue-info { color: #3b82f6; font-weight: bold; font-size: 11px; display: block; margin-top: 6px; text-transform: uppercase; }
-        .type-label { color: #94a3b8; font-weight: normal; margin-left: 10px; font-style: italic; }
+        .type-label { color: #94a3b8; font-weight: normal; margin-left: 5px; font-style: italic; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .flex-row { display: flex; gap: 5px; align-items: center; margin-bottom: 10px; }
         .label { font-size: 10px; color: #94a3b8; margin-bottom: 5px; text-transform: uppercase; }
         .del-btn { color: #ef4444; border: none; background: none; font-size: 18px; cursor: pointer; }
-        .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:10000; padding:20px; align-items:center; overflow-y: auto; }
+        .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:10000; padding:20px; align-items:center; }
     </style>
 </head>
 <body class="p0">
 
-    <div class="version-tag">V69.PREMIUM</div>
+    <div class="version-tag">V69.FIX</div>
 
     <div class="nav">
         <div id="nv0" class="nav-item active" onclick="go(0)">Saisie</div>
@@ -82,14 +82,17 @@
     </div>
 
     <script>
-        let db = JSON.parse(localStorage.getItem('PRO68_DATA') || '[]');
-        let billed = JSON.parse(localStorage.getItem('PRO68_BILL') || '[]');
-        let archived = JSON.parse(localStorage.getItem('PRO68_ARCH') || '[]');
-        let rates = JSON.parse(localStorage.getItem('PRO68_RT')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
+        let db = JSON.parse(localStorage.getItem('P69_DATA') || '[]');
+        let billed = JSON.parse(localStorage.getItem('P69_BILL') || '[]');
+        let archived = JSON.parse(localStorage.getItem('P69_ARCH') || '[]');
+        let rates = JSON.parse(localStorage.getItem('P69_RT')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
 
         function go(n) {
             document.body.className = 'p' + n;
-            document.querySelectorAll('.nav-item').forEach((nv, i) => nv.classList.toggle('active', i === n));
+            let items = document.querySelectorAll('.nav-item');
+            for(let i=0; i<items.length; i++) {
+                items[i].classList.toggle('active', i === n);
+            }
             window.scrollTo(0, 0);
             draw();
         }
@@ -107,86 +110,9 @@
             let s1=toM(vS1), e1=toM(vE1), s2=toM(vS2), e2=toM(vE2);
             
             let val=0, dur=0, hStr="";
-            if(t.includes('Pose') || t === 'Jours OFF') {
+            if(t.indexOf('Pose') > -1 || t === 'Jours OFF') {
                 val = (t==='Pose Piges') ? rates.piges : (t==='Pose Omnes' ? rates.omnes : rates.off);
                 hStr = "FORFAIT";
             } else {
                 let m1 = (s1 > -1 && e1 > s1) ? (e1 - s1) : 0;
                 let m2 = (s2 > -1 && e2 > s2) ? (e2 - s2) : 0;
-                if (m1 > 0 && m2 > 0) {
-                    dur = (m1 + m2) / 60;
-                    hStr = vS1 + "-" + vE1 + " | " + vS2 + "-" + vE2;
-                } else if (s1 > -1 && e2 > s1) {
-                    dur = (e2 - s1) / 60;
-                    hStr = vS1 + " > " + vE2;
-                } else if (m1 > 0) {
-                    dur = m1 / 60; hStr = vS1 + " > " + vE1;
-                }
-                val = dur * (t==='Production' ? rates.prod : rates.trajet);
-            }
-
-            db.unshift({ id: Date.now(), d, p, t, val, hStr, dur });
-            localStorage.setItem('PRO68_DATA', JSON.stringify(db));
-            ['in-proj','s1','e1','s2','e2'].forEach(id => document.getElementById(id).value = "");
-            draw();
-            alert("Enregistré !");
-        }
-
-        function exportData() {
-            let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({db, billed, archived, rates}));
-            let downloadAnchorNode = document.createElement('a');
-            downloadAnchorNode.setAttribute("href", dataStr);
-            downloadAnchorNode.setAttribute("download", "sauvegarde_protrack_" + new Date().toLocaleDateString() + ".json");
-            document.body.appendChild(downloadAnchorNode);
-            downloadAnchorNode.click();
-            downloadAnchorNode.remove();
-        }
-
-        function del(id) {
-            if(confirm("Supprimer cette entrée ?")) {
-                db = db.filter(o => o.id !== id);
-                localStorage.setItem('PRO68_DATA', JSON.stringify(db));
-                draw();
-            }
-        }
-
-        function draw() {
-            let plist = [];
-            db.forEach(o => { if(!plist.includes(o.p)) plist.push(o.p); });
-            document.getElementById('proj-list').innerHTML = plist.map(x => `<option value="${x}">`).join('');
-
-            document.getElementById('recent-list').innerHTML = db.slice(0, 3).map(o => `
-                <div class="card" style="font-size:12px;">
-                    <b>${o.p}</b> <span style="float:right; font-weight:bold;">${o.val.toFixed(2)}€</span><br>
-                    <span style="color:#94a3b8; font-size:10px;">${o.d.split('-').reverse().join('/')} | ${o.hStr}</span>
-                    <span class="blue-info">${o.dur > 0 ? o.dur.toFixed(2)+'H' : 'FORFAIT'} <span class="type-label">(${o.t})</span></span>
-                </div>`).join('');
-
-            let hB="", hA="", tAF=0, tF=0;
-            let groups = {};
-            db.forEach(o => { groups[o.p] = groups[o.p] || []; groups[o.p].push(o); });
-
-            for (var proj in groups) {
-                let isB = billed.includes(proj), isA = archived.includes(proj), total = 0;
-                groups[proj].forEach(o => total += o.val);
-                if(!isA) { if(isB) tF += total; else tAF += total; }
-
-                let lines = groups[proj].map(o => `
-                    <div class="row-item">
-                        <div style="display:flex; justify-content:space-between; align-items:flex-start; font-size:12px;">
-                           <div>
-                             <span style="display:block; font-weight:bold; color:#f8fafc;">${o.d.split('-').reverse().join('/')}</span>
-                             <span style="color:#94a3b8; font-size:11px;">${o.hStr}</span>
-                           </div>
-                           <div style="text-align:right;">
-                             <span style="font-weight:bold;">${o.val.toFixed(2)}€</span>
-                             <button class="del-btn" onclick="del(${o.id})" style="margin-left:8px;">🗑️</button>
-                           </div>
-                        </div>
-                        <span class="blue-info">${o.dur > 0 ? o.dur.toFixed(2)+'H' : 'FORFAIT'} <span class="type-label">(${o.t})</span></span>
-                    </div>`).join('');
-
-                let card = `
-                <div class="card" style="border-left: 5px solid ${isB ? '#10b981' : '#3b82f6'}">
-                    <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:10px; border-bottom:1px solid #475569; padding-bottom:8px;">
-                        <span style="font-size:16px;">${proj}</span>
