@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrack V85-RESTORATION</title>
+    <title>ProTrack V90-PRO</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background: #0f172a; color: white; font-family: sans-serif; margin: 0; padding-bottom: 90px; }
@@ -22,25 +22,24 @@
         .row-main { display: flex; justify-content: space-between; align-items: center; font-size: 11px; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .blue-h { color: #3b82f6; font-weight: bold; font-size: 10px; display: block; margin-top: 4px; }
-        .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:10000; padding:20px; align-items:center; }
+        .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:10000; padding:20px; align-items:center; }
     </style>
 </head>
 <body>
 
     <div class="nav">
-        <div id="nv0" class="nav-item active" onclick="navigate(0)">Saisie</div>
-        <div id="nv1" class="nav-item" onclick="navigate(1)">Bilan</div>
-        <div id="nv2" class="nav-item" onclick="navigate(2)">Archives</div>
+        <div id="nv0" class="nav-item active" onclick="window.nav(0)">Saisie</div>
+        <div id="nv1" class="nav-item" onclick="window.nav(1)">Bilan</div>
+        <div id="nv2" class="nav-item" onclick="window.nav(2)">Archives</div>
     </div>
 
     <div id="pg0" class="page">
-        <div onclick="openSet()" style="font-size:25px; margin-bottom:15px; cursor:pointer; width: fit-content;">⚙️</div>
+        <div onclick="window.openSettings()" style="font-size:25px; margin-bottom:15px; cursor:pointer; width:40px;">⚙️</div>
         <div class="card">
             <div class="grid">
                 <input type="date" id="in-date" class="input">
-                <input type="text" id="in-proj" placeholder="PROJET" class="input" list="plist">
+                <input type="text" id="in-proj" placeholder="PROJET" class="input">
             </div>
-            <datalist id="plist"></datalist>
             <select id="in-type" class="input">
                 <option value="Production">Production</option>
                 <option value="Trajet">Trajet</option>
@@ -52,13 +51,13 @@
                 <div><label class="label">Matin</label><input type="time" id="s1" class="input"><input type="time" id="e1" class="input"></div>
                 <div><label class="label">Aprem</label><input type="time" id="s2" class="input"><input type="time" id="e2" class="input"></div>
             </div>
-            <button class="btn" onclick="saveData()">ENREGISTRER</button>
+            <button class="btn" onclick="window.saveEntry()">ENREGISTRER</button>
         </div>
         <div id="recent-list"></div>
     </div>
 
     <div id="pg1" class="page">
-        <button class="btn-save" onclick="copyData()">📤 SAUVEGARDER (COPIER)</button>
+        <button class="btn-save" onclick="window.copyToClipboard()">📤 COPIER LE BILAN</button>
         <div class="grid" style="margin-bottom:15px;">
             <div class="card" style="margin:0; text-align:center;"><div class="label">À Facturer</div><div id="sum-af" style="font-size:18px; font-weight:bold;">0€</div></div>
             <div class="card" style="margin:0; text-align:center;"><div class="label" style="color:#10b981;">Facturé</div><div id="sum-f" style="font-size:18px; font-weight:bold; color:#10b981;">0€</div></div>
@@ -74,29 +73,30 @@
         <div class="card" style="width:100%;">
             <h3>Tarifs</h3>
             <div id="price-inputs"></div>
-            <button class="btn" onclick="closeSet()">Fermer</button>
+            <button class="btn" onclick="window.closeSettings()">Fermer</button>
         </div>
     </div>
 
     <script>
-        let db = JSON.parse(localStorage.getItem('PT_CORE_DATA') || '[]');
-        let billed = JSON.parse(localStorage.getItem('PT_CORE_BILL') || '[]');
-        let archived = JSON.parse(localStorage.getItem('PT_CORE_ARCH') || '[]');
-        let rates = JSON.parse(localStorage.getItem('PT_CORE_RATE')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
+        // Initialisation des données
+        let db = JSON.parse(localStorage.getItem('PT_V90_DB') || '[]');
+        let billed = JSON.parse(localStorage.getItem('PT_V90_BILL') || '[]');
+        let archived = JSON.parse(localStorage.getItem('PT_V90_ARCH') || '[]');
+        let rates = JSON.parse(localStorage.getItem('PT_V90_RATES')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
 
-        function navigate(n) {
-            const pgs = ['pg0','pg1','pg2'];
-            const nvs = ['nv0','nv1','nv2'];
-            pgs.forEach((id, i) => document.getElementById(id).style.display = (i === n) ? 'block' : 'none');
-            nvs.forEach((id, i) => document.getElementById(id).className = (i === n) ? 'nav-item active' : 'nav-item');
-            render();
-        }
+        // NAVIGATION (Attachée au window pour forcer le fonctionnement mobile)
+        window.nav = function(n) {
+            ['pg0','pg1','pg2'].forEach((id, i) => document.getElementById(id).style.display = (i === n) ? 'block' : 'none');
+            ['nv0','nv1','nv2'].forEach((id, i) => document.getElementById(id).className = (i === n) ? 'nav-item active' : 'nav-item');
+            window.refresh();
+        };
 
-        function saveData() {
+        // ENREGISTREMENT
+        window.saveEntry = function() {
             const d = document.getElementById('in-date').value;
             const p = document.getElementById('in-proj').value.toUpperCase() || "DIVERS";
             const t = document.getElementById('in-type').value;
-            if(!d) return alert("Date manquante");
+            if(!d) { alert("Date oubliée !"); return; }
 
             const toM = (v) => { if(!v) return 0; const s = v.split(':'); return parseInt(s[0])*60+parseInt(s[1]); };
             const s1=toM(document.getElementById('s1').value), e1=toM(document.getElementById('e1').value);
@@ -117,15 +117,46 @@
             }
 
             db.unshift({id: Date.now(), d, p, t, val, hStr, dur});
-            localStorage.setItem('PT_CORE_DATA', JSON.stringify(db));
+            localStorage.setItem('PT_V90_DB', JSON.stringify(db));
             ['in-proj','s1','e1','s2','e2'].forEach(id => document.getElementById(id).value = "");
-            render();
-        }
+            window.refresh();
+            alert("Enregistré !");
+        };
 
-        function render() {
-            document.getElementById('plist').innerHTML = [...new Set(db.map(x => x.p))].map(p => `<option value="${p}">`).join('');
-            
-            document.getElementById('recent-list').innerHTML = db.slice(0, 5).map(o => `
+        // AFFICHAGE
+        window.refresh = function() {
+            // Liste rapide
+            document.getElementById('recent-list').innerHTML = db.slice(0, 3).map(o => `
                 <div class="card" style="padding:10px; font-size:12px; border-left:3px solid #3b82f6;">
-                    <div style="display:flex;justify-content:space-between;"><b>${o.p}</b> <span>${o.val.toFixed(2)}€ <span onclick="delItem(${o.id})">🗑️</span></span></div>
-                    <div
+                    <b>${o.p}</b> - ${o.val.toFixed(2)}€ <span onclick="window.delItem(${o.id})" style="float:right">🗑️</span>
+                </div>`).join('');
+
+            let hB="", hA="", tAF=0, tF=0;
+            let groups = db.reduce((acc, o) => { (acc[o.p] = acc[o.p] || []).push(o); return acc; }, {});
+
+            for(let proj in groups) {
+                let isB = billed.includes(proj), isA = archived.includes(proj);
+                let total = groups[proj].reduce((s, o) => s + o.val, 0);
+                if(!isA) { if(isB) tF += total; else tAF += total; }
+                
+                let lines = groups[proj].map(o => `
+                    <div class="row-item">
+                        <div class="row-main">
+                            <span>${o.d.split('-').reverse().join('/')}</span>
+                            <span>${o.hStr}</span>
+                            <span style="font-weight:bold;">${o.val.toFixed(2)}€</span>
+                        </div>
+                        ${o.dur > 0 ? `<span class="blue-h">TOTAL : ${o.dur.toFixed(2)}h</span>` : ''}
+                    </div>`).join('');
+
+                let card = `<div class="card" style="border-left:5px solid ${isB ? '#10b981' : '#3b82f6'}">
+                    <div style="display:flex;justify-content:space-between;font-weight:bold;margin-bottom:10px;"><span>${proj}</span><span>${total.toFixed(2)}€</span></div>
+                    ${lines}
+                    <div style="display:flex; gap:10px; margin-top:12px;">
+                        <button class="btn-sec" onclick="window.tglB('${proj}')">${isB ? 'À FACTURER' : 'FACTURÉ'}</button>
+                        <button class="btn-sec" onclick="window.tglA('${proj}')">${isA ? 'RÉACTIVER' : 'ARCHIVER'}</button>
+                    </div>
+                </div>`;
+                if(isA) hA += card; else hB += card;
+            }
+            document.getElementById('list-bilan').innerHTML = h
