@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrack V70.FIX</title>
+    <title>ProTrack V72.ULTRA</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background: #0f172a; color: white; font-family: sans-serif; margin: 0; padding-bottom: 90px; }
@@ -27,11 +27,13 @@
         textarea { background: #0f172a; color: #10b981; border: 1px solid #475569; width: 100%; height: 350px; font-family: monospace; font-size: 11px; padding: 10px; margin-top: 10px; border-radius: 6px; line-height: 1.4; white-space: pre; }
         .top-bar { display: flex; gap: 10px; margin-bottom: 15px; }
         .icon-btn { background: #1e293b; padding: 10px; border-radius: 10px; cursor: pointer; font-size: 22px; border: 1px solid #334155; }
+        .toggle-row { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; font-size: 13px; color: #3b82f6; font-weight: bold; }
+        #bloc3 { display: none; }
     </style>
 </head>
 <body>
 
-    <div class="version-tag">V70.FIX</div>
+    <div class="version-tag">V72.ULTRA</div>
 
     <div class="nav">
         <div id="nv0" class="nav-item active" onclick="go(0)">Saisie</div>
@@ -58,10 +60,23 @@
                 <option value="Pose Omnes">Pose Omnes</option>
                 <option value="Jours OFF">Jours OFF</option>
             </select>
-            <div class="label">Matin</div>
+
+            <div class="toggle-row">
+                <input type="checkbox" id="check-long" onchange="toggleLong()">
+                <label for="check-long">Journée à rallonge</label>
+            </div>
+
+            <div class="label">Session 1</div>
             <div class="flex-row"><input type="time" id="s1" class="input"><input type="time" id="e1" class="input"></div>
-            <div class="label">Après-midi</div>
+            
+            <div class="label">Session 2</div>
             <div class="flex-row"><input type="time" id="s2" class="input"><input type="time" id="e2" class="input"></div>
+            
+            <div id="bloc3">
+                <div class="label">Session 3 (Nuit / Rallonge)</div>
+                <div class="flex-row"><input type="time" id="s3" class="input"><input type="time" id="e3" class="input"></div>
+            </div>
+
             <button class="btn" onclick="addItem()">ENREGISTRER</button>
         </div>
         <div class="label">Dernières saisies</div>
@@ -112,6 +127,11 @@
             draw();
         }
 
+        function toggleLong() {
+            var isChecked = document.getElementById('check-long').checked;
+            document.getElementById('bloc3').style.display = isChecked ? 'block' : 'none';
+        }
+
         function toM(v) { if(!v) return -1; var s = v.split(':'); return parseInt(s[0])*60+parseInt(s[1]); }
 
         function addItem() {
@@ -122,6 +142,7 @@
 
             var s1=toM(document.getElementById('s1').value), e1=toM(document.getElementById('e1').value);
             var s2=toM(document.getElementById('s2').value), e2=toM(document.getElementById('e2').value);
+            var s3=toM(document.getElementById('s3').value), e3=toM(document.getElementById('e3').value);
             
             var val=0, dur=0, hStr="";
 
@@ -129,31 +150,40 @@
                 val = (t==='Pose Piges') ? rates.piges : (t==='Pose Omnes' ? rates.omnes : rates.off);
                 hStr = "FORFAIT";
             } else {
-                var m1 = (s1 > -1 && e1 > s1) ? (e1 - s1) : 0;
-                var m2 = (s2 > -1 && e2 > s2) ? (e2 - s2) : 0;
-                
-                if (s1 > -1 && e2 > s1 && e1 === -1 && s2 === -1) {
-                    dur = (e2 - s1) / 60;
-                    hStr = document.getElementById('s1').value + " > " + document.getElementById('e2').value;
-                } else {
-                    dur = (m1 + m2) / 60;
-                    var p1 = m1 > 0 ? (document.getElementById('s1').value + "-" + document.getElementById('e1').value) : "";
-                    var p2 = m2 > 0 ? (document.getElementById('s2').value + "-" + document.getElementById('e2').value) : "";
-                    hStr = (p1 && p2) ? p1 + " | " + p2 : (p1 || p2);
+                function calcDur(start, end) {
+                    if (start === -1 || end === -1) return 0;
+                    let diff = end - start;
+                    if (diff < 0) diff += 1440; 
+                    return diff;
                 }
+
+                var m1 = calcDur(s1, e1);
+                var m2 = calcDur(s2, e2);
+                var m3 = calcDur(s3, e3);
+                
+                dur = (m1 + m2 + m3) / 60;
+                
+                var parts = [];
+                if(m1 > 0) parts.push(document.getElementById('s1').value + "-" + document.getElementById('e1').value);
+                if(m2 > 0) parts.push(document.getElementById('s2').value + "-" + document.getElementById('e2').value);
+                if(m3 > 0) parts.push(document.getElementById('s3').value + "-" + document.getElementById('e3').value);
+                hStr = parts.join(' | ');
+
                 val = dur * (t==='Production' ? rates.prod : rates.trajet);
             }
 
-            if(dur <= 0 && hStr !== "FORFAIT") {
-                alert("Vérifiez les horaires !");
-                return;
-            }
+            if(dur <= 0 && hStr !== "FORFAIT") return;
 
             db.unshift({ id: new Date().getTime(), d: d, p: p, t: t, val: val, hStr: hStr, dur: dur });
             localStorage.setItem('P69S_DATA', JSON.stringify(db));
+            
+            // Reset
             document.getElementById('in-proj').value = "";
             document.getElementById('s1').value = ""; document.getElementById('e1').value = "";
             document.getElementById('s2').value = ""; document.getElementById('e2').value = "";
+            document.getElementById('s3').value = ""; document.getElementById('e3').value = "";
+            document.getElementById('check-long').checked = false;
+            toggleLong();
             draw();
         }
 
