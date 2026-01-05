@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrack V76.ULTIMATE</title>
+    <title>ProTrack V77.FLEX</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background: #0f172a; color: white; font-family: sans-serif; margin: 0; padding-bottom: 90px; }
@@ -33,7 +33,7 @@
 </head>
 <body>
 
-    <div class="version-tag">V76.ULTIMATE</div>
+    <div class="version-tag">V77.FLEX</div>
 
     <div class="nav">
         <div id="nv0" class="nav-item active" onclick="go(0)">Saisie</div>
@@ -66,14 +66,14 @@
                 <label for="check-long">Journée à rallonge (3 blocs)</label>
             </div>
 
-            <div class="label">Bloc 1</div>
+            <div class="label">Arrivée Matin (ou Bloc 1)</div>
             <div class="flex-row"><input type="time" id="s1" class="input"><input type="time" id="e1" class="input"></div>
             
-            <div class="label">Bloc 2</div>
+            <div class="label">Départ Soir (ou Bloc 2)</div>
             <div class="flex-row"><input type="time" id="s2" class="input"><input type="time" id="e2" class="input"></div>
             
             <div id="bloc3">
-                <div class="label">Bloc 3</div>
+                <div class="label">Bloc 3 (Nuit)</div>
                 <div class="flex-row"><input type="time" id="s3" class="input"><input type="time" id="e3" class="input"></div>
             </div>
 
@@ -90,7 +90,6 @@
         <div id="list-bilan"></div>
     </div>
     <div id="pg2" class="page"><div id="list-archive"></div></div>
-
     <div id="set-modal" class="modal"><div class="card" style="width:100%; margin-top:20px;"><h3>TARIFS</h3><div id="price-inputs"></div><button class="btn" style="width:100%" onclick="closeSet()">FERMER</button></div></div>
     <div id="save-modal" class="modal"><div class="card" style="width:100%; margin-top:20px;"><h3>NOTES</h3><button class="btn-save" onclick="generatePrintable()">GÉNÉRER</button><textarea id="backup-zone" readonly></textarea><button class="btn" style="width:100%" onclick="closeSave()">FERMER</button></div></div>
 
@@ -131,21 +130,27 @@
                 var val = (t==='Pose Piges') ? rates.piges : (t==='Pose Omnes' ? rates.omnes : rates.off);
                 db.unshift({ id: new Date().getTime(), d: d, p: p, t: t, val: val, hStr: "FORFAIT", dur: 0 });
             } else {
-                function calc(s, e, idS, idE) {
-                    if(s === -1 || e === -1) return 0;
-                    let diff = e - s;
-                    if(diff < 0) diff += 1440; // Gère minuit
-                    hParts.push(document.getElementById(idS).value + "-" + document.getElementById(idE).value);
-                    return diff;
-                }
+                function diff(a, b) { if(a === -1 || b === -1) return 0; let r = b - a; return r < 0 ? r + 1440 : r; }
 
-                totalMin += calc(s1, e1, 's1', 'e1');
-                totalMin += calc(s2, e2, 's2', 'e2');
-                totalMin += calc(s3, e3, 's3', 'e3');
+                // CAS SPÉCIAL : Journée continue (s1 et e2 remplis, mais e1 et s2 vides)
+                if(s1 > -1 && e2 > -1 && e1 === -1 && s2 === -1) {
+                    let dC = diff(s1, e2);
+                    let d3 = diff(s3, e3);
+                    totalMin = dC + d3;
+                    hParts.push(document.getElementById('s1').value + ">" + document.getElementById('e2').value);
+                    if(d3 > 0) hParts.push(document.getElementById('s3').value + "-" + document.getElementById('e3').value);
+                } 
+                // CAS NORMAL : Somme des blocs
+                else {
+                    let d1 = diff(s1, e1), d2 = diff(s2, e2), d3 = diff(s3, e3);
+                    totalMin = d1 + d2 + d3;
+                    if(d1 > 0) hParts.push(document.getElementById('s1').value + "-" + document.getElementById('e1').value);
+                    if(d2 > 0) hParts.push(document.getElementById('s2').value + "-" + document.getElementById('e2').value);
+                    if(d3 > 0) hParts.push(document.getElementById('s3').value + "-" + document.getElementById('e3').value);
+                }
 
                 var dur = totalMin / 60;
                 if(dur <= 0) return;
-
                 var val = dur * (t==='Production' ? rates.prod : rates.trajet);
                 db.unshift({ id: new Date().getTime(), d: d, p: p, t: t, val: val, hStr: hParts.join(' | '), dur: dur });
             }
@@ -156,6 +161,7 @@
             draw();
         }
 
+        // --- RESTE DU CODE IDENTIQUE POUR LA STABILITÉ ---
         function draw() {
             var plist = [];
             for(var i=0; i<db.length; i++) { if(plist.indexOf(db[i].p) === -1) plist.push(db[i].p); }
@@ -185,7 +191,6 @@
             document.getElementById('sum-af').innerText = tAF.toFixed(2) + "€";
             document.getElementById('sum-f').innerText = tF.toFixed(2) + "€";
         }
-
         window.tB = function(p) { if(billed.indexOf(p) > -1) billed = billed.filter(function(x){return x!==p;}); else billed.push(p); localStorage.setItem('P69S_BILL', JSON.stringify(billed)); draw(); };
         window.tA = function(p) { if(archived.indexOf(p) > -1) archived = archived.filter(function(x){return x!==p;}); else archived.push(p); localStorage.setItem('P69S_ARCH', JSON.stringify(archived)); draw(); };
         function del(id) { if(confirm("Supprimer ?")) { db = db.filter(function(o) { return o.id !== id; }); localStorage.setItem('P69S_DATA', JSON.stringify(db)); draw(); } }
