@@ -3,47 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrack V80</title>
+    <title>ProTrack V85-RESTORATION</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background: #0f172a; color: white; font-family: sans-serif; margin: 0; padding-bottom: 90px; }
-        
         .nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: #1e293b; display: flex; border-top: 1px solid #475569; z-index: 9999; }
         .nav-item { flex: 1; color: #64748b; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px; cursor: pointer; }
         .nav-item.active { color: #3b82f6; border-top: 3px solid #3b82f6; background: rgba(59, 130, 246, 0.1); }
-
         .page { display: none; padding: 15px; }
-        .active-page { display: block !important; }
-
+        #pg0 { display: block; } 
         .card { background: #1e293b; border-radius: 10px; padding: 15px; margin-bottom: 15px; border: 1px solid #334155; }
         .input { background: #0f172a; border: 1px solid #475569; color: white; border-radius: 6px; padding: 12px; width: 100%; font-size: 16px; margin-bottom: 10px; display: block; }
-        .btn { background: #2563eb; color: white; padding: 15px; border-radius: 10px; font-weight: bold; border: none; font-size: 16px; width: 100%; }
+        .btn { background: #2563eb; color: white; padding: 15px; border-radius: 10px; font-weight: bold; width: 100%; border: none; font-size: 16px; }
         .btn-save { background: #10b981; color: white; padding: 12px; border-radius: 8px; font-weight: bold; width: 100%; border: none; margin-bottom: 15px; }
         .btn-sec { background: #334155; padding: 10px; font-size: 10px; color: white; border-radius: 5px; text-align: center; font-weight: bold; flex: 1; border: none; }
-        
-        .row-item { border-bottom: 1px solid #475569; padding: 10px 0; }
-        .blue-h { color: #3b82f6; font-weight: bold; font-size: 11px; display: block; margin-top: 4px; }
+        .label { font-size: 11px; color: #94a3b8; margin-bottom: 5px; display: block; text-transform: uppercase; }
+        .row-item { border-bottom: 1px solid #334155; padding: 10px 0; }
+        .row-main { display: flex; justify-content: space-between; align-items: center; font-size: 11px; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .label { font-size: 11px; color: #94a3b8; margin-bottom: 5px; text-transform: uppercase; }
-
-        .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:10000; padding:20px; align-items:center; justify-content:center; }
+        .blue-h { color: #3b82f6; font-weight: bold; font-size: 10px; display: block; margin-top: 4px; }
+        .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:10000; padding:20px; align-items:center; }
     </style>
 </head>
 <body>
 
     <div class="nav">
-        <div id="nv0" class="nav-item active" onclick="go(0)">Saisie</div>
-        <div id="nv1" class="nav-item" onclick="go(1)">Bilan</div>
-        <div id="nv2" class="nav-item" onclick="go(2)">Archives</div>
+        <div id="nv0" class="nav-item active" onclick="navigate(0)">Saisie</div>
+        <div id="nv1" class="nav-item" onclick="navigate(1)">Bilan</div>
+        <div id="nv2" class="nav-item" onclick="navigate(2)">Archives</div>
     </div>
 
-    <div id="pg0" class="page active-page">
-        <div onclick="openSet()" style="font-size:28px; margin-bottom:15px; cursor:pointer; width: fit-content;">⚙️</div>
+    <div id="pg0" class="page">
+        <div onclick="openSet()" style="font-size:25px; margin-bottom:15px; cursor:pointer; width: fit-content;">⚙️</div>
         <div class="card">
             <div class="grid">
                 <input type="date" id="in-date" class="input">
-                <input type="text" id="in-proj" placeholder="PROJET" class="input">
+                <input type="text" id="in-proj" placeholder="PROJET" class="input" list="plist">
             </div>
+            <datalist id="plist"></datalist>
             <select id="in-type" class="input">
                 <option value="Production">Production</option>
                 <option value="Trajet">Trajet</option>
@@ -55,13 +52,13 @@
                 <div><label class="label">Matin</label><input type="time" id="s1" class="input"><input type="time" id="e1" class="input"></div>
                 <div><label class="label">Aprem</label><input type="time" id="s2" class="input"><input type="time" id="e2" class="input"></div>
             </div>
-            <button class="btn" onclick="addItem()">ENREGISTRER</button>
+            <button class="btn" onclick="saveData()">ENREGISTRER</button>
         </div>
         <div id="recent-list"></div>
     </div>
 
     <div id="pg1" class="page">
-        <button class="btn-save" onclick="exportData()">📤 COPIER LES DONNÉES</button>
+        <button class="btn-save" onclick="copyData()">📤 SAUVEGARDER (COPIER)</button>
         <div class="grid" style="margin-bottom:15px;">
             <div class="card" style="margin:0; text-align:center;"><div class="label">À Facturer</div><div id="sum-af" style="font-size:18px; font-weight:bold;">0€</div></div>
             <div class="card" style="margin:0; text-align:center;"><div class="label" style="color:#10b981;">Facturé</div><div id="sum-f" style="font-size:18px; font-weight:bold; color:#10b981;">0€</div></div>
@@ -75,74 +72,60 @@
 
     <div id="set-modal" class="modal">
         <div class="card" style="width:100%;">
-            <h3 style="margin-top:0;">Tarifs</h3>
+            <h3>Tarifs</h3>
             <div id="price-inputs"></div>
-            <button class="btn" onclick="closeSet()">ENREGISTRER & FERMER</button>
+            <button class="btn" onclick="closeSet()">Fermer</button>
         </div>
     </div>
 
     <script>
-        let data = JSON.parse(localStorage.getItem('PT_V80_DATA') || '[]');
-        let billed = JSON.parse(localStorage.getItem('PT_V80_BILL') || '[]');
-        let archived = JSON.parse(localStorage.getItem('PT_V80_ARCH') || '[]');
-        let rates = JSON.parse(localStorage.getItem('PT_V80_RATES')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
+        let db = JSON.parse(localStorage.getItem('PT_CORE_DATA') || '[]');
+        let billed = JSON.parse(localStorage.getItem('PT_CORE_BILL') || '[]');
+        let archived = JSON.parse(localStorage.getItem('PT_CORE_ARCH') || '[]');
+        let rates = JSON.parse(localStorage.getItem('PT_CORE_RATE')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
 
-        function go(n) {
-            const pages = ['pg0', 'pg1', 'pg2'];
-            pages.forEach((p, i) => {
-                document.getElementById(p).classList.toggle('active-page', i === n);
-                document.getElementById('nv' + i).classList.toggle('active', i === n);
-            });
-            draw();
+        function navigate(n) {
+            const pgs = ['pg0','pg1','pg2'];
+            const nvs = ['nv0','nv1','nv2'];
+            pgs.forEach((id, i) => document.getElementById(id).style.display = (i === n) ? 'block' : 'none');
+            nvs.forEach((id, i) => document.getElementById(id).className = (i === n) ? 'nav-item active' : 'nav-item');
+            render();
         }
 
-        function addItem() {
+        function saveData() {
             const d = document.getElementById('in-date').value;
             const p = document.getElementById('in-proj').value.toUpperCase() || "DIVERS";
             const t = document.getElementById('in-type').value;
-
-            if(!d) return alert("Indique une date");
+            if(!d) return alert("Date manquante");
 
             const toM = (v) => { if(!v) return 0; const s = v.split(':'); return parseInt(s[0])*60+parseInt(s[1]); };
             const s1=toM(document.getElementById('s1').value), e1=toM(document.getElementById('e1').value);
             const s2=toM(document.getElementById('s2').value), e2=toM(document.getElementById('e2').value);
             
             let val=0, hStr="", dur=0;
-
             if(t.includes('Pose') || t === 'Jours OFF') {
-                val = t==='Pose Piges' ? rates.piges : (t==='Pose Omnes' ? rates.omnes : rates.off);
+                val = t === 'Pose Piges' ? rates.piges : (t === 'Pose Omnes' ? rates.omnes : rates.off);
                 hStr = "FORFAIT";
             } else {
-                let m1 = (e1 > s1) ? (e1-s1) : 0;
-                let m2 = (e2 > s2) ? (e2-s2) : 0;
-                dur = (m1+m2)/60;
-                let t1 = m1>0 ? document.getElementById('s1').value+"-"+document.getElementById('e1').value : "";
-                let t2 = m2>0 ? document.getElementById('s2').value+"-"+document.getElementById('e2').value : "";
-                hStr = (t1 && t2) ? t1+" / "+t2 : (t1 || t2 || "00:00");
-                val = dur * (t==='Production' ? rates.prod : rates.trajet);
+                let m1 = (e1 > s1) ? (e1 - s1) : 0;
+                let m2 = (e2 > s2) ? (e2 - s2) : 0;
+                dur = (m1 + m2) / 60;
+                let t1 = m1 > 0 ? document.getElementById('s1').value + "-" + document.getElementById('e1').value : "";
+                let t2 = m2 > 0 ? document.getElementById('s2').value + "-" + document.getElementById('e2').value : "";
+                hStr = (t1 && t2) ? t1 + " / " + t2 : (t1 || t2 || "00:00");
+                val = dur * (t === 'Production' ? rates.prod : rates.trajet);
             }
 
-            data.unshift({ id: Date.now(), d, p, t, val, hStr, dur });
-            localStorage.setItem('PT_V80_DATA', JSON.stringify(data));
-            
+            db.unshift({id: Date.now(), d, p, t, val, hStr, dur});
+            localStorage.setItem('PT_CORE_DATA', JSON.stringify(db));
             ['in-proj','s1','e1','s2','e2'].forEach(id => document.getElementById(id).value = "");
-            draw();
+            render();
         }
 
-        function draw() {
-            document.getElementById('recent-list').innerHTML = data.slice(0, 3).map(o => `
-                <div class="card" style="font-size:12px; border-left: 3px solid #3b82f6;"><b>${o.p}</b> - ${o.val.toFixed(2)}€ <span onclick="delItem(${o.id})" style="float:right">🗑️</span></div>
-            `).join('');
-
-            let hB="", hA="", tAF=0, tF=0;
-            const groups = data.reduce((acc, o) => { (acc[o.p] = acc[o.p] || []).push(o); return acc; }, {});
-
-            for (let proj in groups) {
-                const isB = billed.includes(proj);
-                const isA = archived.includes(proj);
-                const total = groups[proj].reduce((s, o) => s + o.val, 0);
-
-                if(!isA) { if(isB) tF += total; else tAF += total; }
-
-                const lines = groups[proj].map(o => `
-                    <div class="row-item">
+        function render() {
+            document.getElementById('plist').innerHTML = [...new Set(db.map(x => x.p))].map(p => `<option value="${p}">`).join('');
+            
+            document.getElementById('recent-list').innerHTML = db.slice(0, 5).map(o => `
+                <div class="card" style="padding:10px; font-size:12px; border-left:3px solid #3b82f6;">
+                    <div style="display:flex;justify-content:space-between;"><b>${o.p}</b> <span>${o.val.toFixed(2)}€ <span onclick="delItem(${o.id})">🗑️</span></span></div>
+                    <div
