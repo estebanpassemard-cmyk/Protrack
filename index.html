@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrack V69.FINAL</title>
+    <title>ProTrack V69.PRINT</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background: #0f172a; color: white; font-family: sans-serif; margin: 0; padding-bottom: 90px; }
@@ -14,23 +14,22 @@
         .page { display: none; padding: 15px; width: 100%; }
         .card { background: #1e293b; border-radius: 10px; padding: 15px; margin-bottom: 15px; border: 1px solid #334155; position: relative; }
         .input { background: #0f172a; border: 1px solid #475569; color: white; border-radius: 6px; padding: 10px; width: 100%; font-size: 16px; margin-bottom: 10px; display: block; }
-        .btn { background: #2563eb; color: white; padding: 15px; border-radius: 10px; font-weight: bold; border: none; font-size: 16px; width: 100%; margin-top: 5px; cursor: pointer; }
+        .btn { background: #2563eb; color: white; padding: 15px; border-radius: 10px; font-weight: bold; border: none; font-size: 16px; width: 100%; margin-top: 5px; cursor: pointer; width: 100%; }
         .btn-sec { background: #475569; padding: 10px; font-size: 10px; color: white; border-radius: 5px; text-align: center; font-weight: bold; flex: 1; border: none; cursor: pointer; }
         .btn-save { background: #10b981; color: white; padding: 12px; border-radius: 6px; font-weight: bold; border: none; width: 100%; margin-bottom: 10px; cursor: pointer; }
         .row-item { border-bottom: 1px solid #475569; padding: 10px 0; }
         .blue-info { color: #3b82f6; font-weight: bold; font-size: 11px; display: block; margin-top: 6px; text-transform: uppercase; }
-        .type-label { color: #94a3b8; font-weight: normal; margin-left: 5px; font-style: italic; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .flex-row { display: flex; gap: 5px; align-items: center; margin-bottom: 10px; }
         .label { font-size: 10px; color: #94a3b8; margin-bottom: 5px; text-transform: uppercase; }
         .del-btn { color: #ef4444; border: none; background: none; font-size: 18px; cursor: pointer; }
         .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:10000; padding:20px; align-items:center; overflow-y: auto; }
-        textarea { background: #0f172a; color: #10b981; border: 1px solid #475569; width: 100%; height: 150px; font-family: monospace; font-size: 12px; padding: 10px; margin-top: 10px; border-radius: 6px; }
+        textarea { background: #0f172a; color: #10b981; border: 1px solid #475569; width: 100%; height: 250px; font-family: monospace; font-size: 11px; padding: 10px; margin-top: 10px; border-radius: 6px; line-height: 1.4; }
     </style>
 </head>
 <body>
 
-    <div class="version-tag">V69.FINAL</div>
+    <div class="version-tag">V69.PRINT</div>
 
     <div class="nav">
         <div id="nv0" class="nav-item active" onclick="go(0)">Saisie</div>
@@ -75,10 +74,9 @@
 
     <div id="set-modal" class="modal">
         <div class="card" style="width:100%;">
-            <h3 style="margin-top:0;">Sauvegarde Texte</h3>
-            <p style="font-size:10px; color:#94a3b8;">Copiez ce texte dans vos notes pour ne rien perdre :</p>
-            <button class="btn-save" onclick="generateBackup()">📝 GÉNÉRER LA COPIE</button>
-            <textarea id="backup-zone" readonly placeholder="Le texte de sauvegarde apparaîtra ici..."></textarea>
+            <h3 style="margin-top:0;">Récapitulatif pour Bloc-Notes</h3>
+            <button class="btn-save" onclick="generatePrintable()">📝 GÉNÉRER LE RÉCAPITULATIF</button>
+            <textarea id="backup-zone" readonly placeholder="Votre historique apparaîtra ici..."></textarea>
             
             <hr style="border:0; border-top:1px solid #475569; margin:20px 0;">
             <h3>Tarifs</h3>
@@ -139,14 +137,24 @@
             alert("Enregistré !");
         }
 
-        function generateBackup() {
-            var data = {db:db, billed:billed, archived:archived, rates:rates};
-            var txt = JSON.stringify(data);
+        function generatePrintable() {
+            if(db.length === 0) { alert("Aucune donnée à exporter"); return; }
+            var txt = "--- RÉCAPITULATIF PROTRACK ---\n\n";
+            // Tri par date décroissante
+            var tempDb = [].concat(db);
+            tempDb.sort(function(a,b){ return b.d.localeCompare(a.d); });
+            
+            for(var i=0; i<tempDb.length; i++) {
+                var o = tempDb[i];
+                var dateFr = o.d.split('-').reverse().join('/');
+                var durStr = o.dur > 0 ? o.dur.toFixed(2) + "H " : "";
+                txt += dateFr + " - " + o.p + " : " + o.hStr + " (" + durStr + o.t + ") -> " + o.val.toFixed(2) + "€\n";
+            }
+            
             var area = document.getElementById('backup-zone');
             area.value = txt;
             area.select();
-            area.setSelectionRange(0, 99999);
-            alert("Texte généré et sélectionné ! Vous pouvez faire 'Copier' et le coller dans votre bloc-note.");
+            alert("Récapitulatif généré ! Copiez-le maintenant.");
         }
 
         function del(id) {
@@ -158,12 +166,10 @@
         }
 
         function draw() {
-            // Liste Projets Auto-complétion
             var plist = [];
             for(var i=0; i<db.length; i++) { if(plist.indexOf(db[i].p) === -1) plist.push(db[i].p); }
             document.getElementById('proj-list').innerHTML = plist.map(function(x) { return '<option value="'+x+'">'; }).join('');
 
-            // Cartes de rappel (Page 0)
             var recentH = "";
             var limit = db.length > 3 ? 3 : db.length;
             for(var r=0; r<limit; r++){
@@ -171,18 +177,14 @@
                 recentH += '<div class="card" style="font-size:12px; margin-bottom:10px;">' +
                            '<b>'+oR.p+'</b> <span style="float:right;">'+oR.val.toFixed(2)+'€</span><br>' +
                            '<span style="color:#94a3b8; font-size:10px;">'+oR.d.split('-').reverse().join('/')+' | '+oR.hStr+'</span>' +
-                           '<span class="blue-info">'+ (oR.dur > 0 ? oR.dur.toFixed(2)+'H' : 'FORFAIT') +' <span class="type-label">('+oR.t+')</span></span></div>';
+                           '<span class="blue-info">'+ (oR.dur > 0 ? oR.dur.toFixed(2)+'H' : 'FORFAIT') +' ('+oR.t+')</span></div>';
             }
-            document.getElementById('recent-list').innerHTML = recentH || '<p style="font-size:12px; color:#64748b;">Aucune saisie récente</p>';
+            document.getElementById('recent-list').innerHTML = recentH || '<p style="font-size:11px; color:#64748b;">Aucune saisie.</p>';
 
-            // Bilan et Archives
             var hB="", hA="", tAF=0, tF=0;
             var groups = {};
-            for(var j=0; j<db.length; j++) { 
-                var o = db[j];
-                groups[o.p] = groups[o.p] || []; 
-                groups[o.p].push(o); 
-            }
+            for(var j=0; j<db.length; j++) { var o = db[j]; groups[o.p] = groups[o.p] || []; groups[o.p].push(o); }
+            
             for (var proj in groups) {
                 var isB = (billed.indexOf(proj) > -1), isA = (archived.indexOf(proj) > -1), total = 0;
                 var lines = "";
@@ -190,11 +192,10 @@
                     var it = groups[proj][k];
                     total += it.val;
                     lines += '<div class="row-item"><div style="display:flex; justify-content:space-between;">' +
-                             '<div><span style="display:block; font-weight:bold;">' + it.d.split('-').reverse().join('/') + '</span>' +
+                             '<div><span style="font-weight:bold;">' + it.d.split('-').reverse().join('/') + '</span><br>' +
                              '<span style="color:#94a3b8; font-size:11px;">' + it.hStr + '</span></div>' +
-                             '<div style="text-align:right;"><span style="font-weight:bold;">' + it.val.toFixed(2) + '€</span>' +
-                             '<button class="del-btn" onclick="del(' + it.id + ')" style="margin-left:8px;">🗑️</button></div></div>' +
-                             '<span class="blue-info">' + (it.dur > 0 ? it.dur.toFixed(2)+'H' : 'FORFAIT') + ' <span class="type-label">(' + it.t + ')</span></span></div>';
+                             '<div><b>' + it.val.toFixed(2) + '€</b><button class="del-btn" onclick="del(' + it.id + ')"> 🗑️</button></div></div>' +
+                             '<span class="blue-info">' + (it.dur > 0 ? it.dur.toFixed(2)+'H' : 'FORFAIT') + ' (' + it.t + ')</span></div>';
                 }
                 if(!isA) { if(isB) tF += total; else tAF += total; }
                 var card = '<div class="card" style="border-left: 5px solid ' + (isB ? '#10b981' : '#3b82f6') + '">' +
