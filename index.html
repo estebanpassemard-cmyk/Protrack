@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrack V77.FLEX</title>
+    <title>ProTrack V80.FINAL</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background: #0f172a; color: white; font-family: sans-serif; margin: 0; padding-bottom: 90px; }
@@ -15,7 +15,7 @@
         .card { background: #1e293b; border-radius: 10px; padding: 15px; margin-bottom: 15px; border: 1px solid #334155; position: relative; }
         .input { background: #0f172a; border: 1px solid #475569; color: white; border-radius: 6px; padding: 10px; width: 100%; font-size: 16px; margin-bottom: 10px; display: block; }
         .btn { background: #2563eb; color: white; padding: 15px; border-radius: 10px; font-weight: bold; border: none; font-size: 16px; width: 100%; margin-top: 5px; cursor: pointer; }
-        .btn-sec { background: #475569; padding: 10px; font-size: 10px; color: white; border-radius: 5px; text-align: center; font-weight: bold; flex: 1; border: none; cursor: pointer; }
+        .btn-sec { background: #475569; padding: 12px 5px; font-size: 10px; color: white; border-radius: 6px; text-align: center; font-weight: bold; flex: 1; border: none; cursor: pointer; text-transform: uppercase; }
         .btn-save { background: #10b981; color: white; padding: 15px; border-radius: 8px; font-weight: bold; border: none; width: 100%; margin-bottom: 10px; cursor: pointer; font-size: 14px; }
         .row-item { border-bottom: 1px solid #475569; padding: 10px 0; }
         .blue-info { color: #3b82f6; font-weight: bold; font-size: 11px; display: block; margin-top: 6px; text-transform: uppercase; }
@@ -33,7 +33,7 @@
 </head>
 <body>
 
-    <div class="version-tag">V77.FLEX</div>
+    <div class="version-tag">V80.FINAL</div>
 
     <div class="nav">
         <div id="nv0" class="nav-item active" onclick="go(0)">Saisie</div>
@@ -89,9 +89,11 @@
         </div>
         <div id="list-bilan"></div>
     </div>
+
     <div id="pg2" class="page"><div id="list-archive"></div></div>
+
     <div id="set-modal" class="modal"><div class="card" style="width:100%; margin-top:20px;"><h3>TARIFS</h3><div id="price-inputs"></div><button class="btn" style="width:100%" onclick="closeSet()">FERMER</button></div></div>
-    <div id="save-modal" class="modal"><div class="card" style="width:100%; margin-top:20px;"><h3>NOTES</h3><button class="btn-save" onclick="generatePrintable()">GÉNÉRER</button><textarea id="backup-zone" readonly></textarea><button class="btn" style="width:100%" onclick="closeSave()">FERMER</button></div></div>
+    <div id="save-modal" class="modal"><div class="card" style="width:100%; margin-top:20px;"><h3>NOTES</h3><button class="btn-save" onclick="generatePrintable()">GÉNÉRER LE RÉCAPITULATIF</button><textarea id="backup-zone" readonly></textarea><button class="btn" style="width:100%" onclick="closeSave()">FERMER</button></div></div>
 
     <script>
         var db = JSON.parse(localStorage.getItem('P69S_DATA') || '[]');
@@ -131,47 +133,41 @@
                 db.unshift({ id: new Date().getTime(), d: d, p: p, t: t, val: val, hStr: "FORFAIT", dur: 0 });
             } else {
                 function diff(a, b) { if(a === -1 || b === -1) return 0; let r = b - a; return r < 0 ? r + 1440 : r; }
-
-                // CAS SPÉCIAL : Journée continue (s1 et e2 remplis, mais e1 et s2 vides)
                 if(s1 > -1 && e2 > -1 && e1 === -1 && s2 === -1) {
-                    let dC = diff(s1, e2);
-                    let d3 = diff(s3, e3);
+                    let dC = diff(s1, e2), d3 = diff(s3, e3);
                     totalMin = dC + d3;
                     hParts.push(document.getElementById('s1').value + ">" + document.getElementById('e2').value);
                     if(d3 > 0) hParts.push(document.getElementById('s3').value + "-" + document.getElementById('e3').value);
-                } 
-                // CAS NORMAL : Somme des blocs
-                else {
+                } else {
                     let d1 = diff(s1, e1), d2 = diff(s2, e2), d3 = diff(s3, e3);
                     totalMin = d1 + d2 + d3;
                     if(d1 > 0) hParts.push(document.getElementById('s1').value + "-" + document.getElementById('e1').value);
                     if(d2 > 0) hParts.push(document.getElementById('s2').value + "-" + document.getElementById('e2').value);
                     if(d3 > 0) hParts.push(document.getElementById('s3').value + "-" + document.getElementById('e3').value);
                 }
-
                 var dur = totalMin / 60;
                 if(dur <= 0) return;
                 var val = dur * (t==='Production' ? rates.prod : rates.trajet);
                 db.unshift({ id: new Date().getTime(), d: d, p: p, t: t, val: val, hStr: hParts.join(' | '), dur: dur });
             }
-
             localStorage.setItem('P69S_DATA', JSON.stringify(db));
             ['s1','e1','s2','e2','s3','e3'].forEach(id => document.getElementById(id).value = "");
             document.getElementById('check-long').checked = false; toggleLong();
             draw();
         }
 
-        // --- RESTE DU CODE IDENTIQUE POUR LA STABILITÉ ---
         function draw() {
             var plist = [];
             for(var i=0; i<db.length; i++) { if(plist.indexOf(db[i].p) === -1) plist.push(db[i].p); }
             document.getElementById('proj-list').innerHTML = plist.map(function(x) { return '<option value="'+x+'">'; }).join('');
+            
             var rec = "";
             for(var r=0; r<Math.min(db.length, 3); r++){
                 var o = db[r];
                 rec += '<div class="card" style="font-size:12px; margin-bottom:10px;"><b>'+o.p+'</b><span style="float:right;">'+o.val.toFixed(2)+'€</span><br><span style="color:#94a3b8;">'+o.d.split('-').reverse().join('/')+' | '+o.hStr+'</span></div>';
             }
             document.getElementById('recent-list').innerHTML = rec || "Aucune saisie.";
+
             var hB="", hA="", tAF=0, tF=0;
             var groups = {};
             for(var j=0; j<db.length; j++) { groups[db[j].p] = groups[db[j].p] || []; groups[db[j].p].push(db[j]); }
@@ -183,14 +179,23 @@
                     lines += '<div class="row-item"><div style="display:flex; justify-content:space-between;"><div><b>'+it.d.split('-').reverse().join('/')+'</b><br><small>'+it.hStr+'</small></div><div><b>'+it.val.toFixed(2)+'€</b><button class="del-btn" onclick="del('+it.id+')">🗑️</button></div></div></div>';
                 }
                 if(!isA) { if(isB) tF += tot; else tAF += tot; }
-                var card = '<div class="card" style="border-left:5px solid '+(isB?'#10b981':'#3b82f6')+'"><b>'+proj+' : '+tot.toFixed(2)+'€</b>'+lines+'<div style="display:flex; gap:10px; margin-top:10px;"><button class="btn-sec" onclick="tB(\''+proj+'\')">STATUT</button><button class="btn-sec" onclick="tA(\''+proj+'\')">ARCHIVE</button></div></div>';
+                
+                var card = '<div class="card" style="border-left:5px solid '+(isB?'#10b981':'#3b82f6')+'">' +
+                    '<div style="margin-bottom:10px;"><b>'+proj+'</b> <span style="float:right;">'+tot.toFixed(2)+'€</span></div>' + 
+                    lines + 
+                    '<div style="display:flex; gap:10px; margin-top:10px;">' +
+                    '<button class="btn-sec" onclick="tB(\''+proj+'\')">' + (isB ? 'À FACTURER' : 'FACTURÉ') + '</button>' +
+                    '<button class="btn-sec" onclick="tA(\''+proj+'\')">' + (isA ? 'RÉACTIVER' : 'ARCHIVER') + '</button>' +
+                    '</div></div>';
+                
                 if(isA) hA += card; else hB += card;
             }
-            document.getElementById('list-bilan').innerHTML = hB;
-            document.getElementById('list-archive').innerHTML = hA;
+            document.getElementById('list-bilan').innerHTML = hB || "Aucun projet.";
+            document.getElementById('list-archive').innerHTML = hA || "Aucune archive.";
             document.getElementById('sum-af').innerText = tAF.toFixed(2) + "€";
             document.getElementById('sum-f').innerText = tF.toFixed(2) + "€";
         }
+
         window.tB = function(p) { if(billed.indexOf(p) > -1) billed = billed.filter(function(x){return x!==p;}); else billed.push(p); localStorage.setItem('P69S_BILL', JSON.stringify(billed)); draw(); };
         window.tA = function(p) { if(archived.indexOf(p) > -1) archived = archived.filter(function(x){return x!==p;}); else archived.push(p); localStorage.setItem('P69S_ARCH', JSON.stringify(archived)); draw(); };
         function del(id) { if(confirm("Supprimer ?")) { db = db.filter(function(o) { return o.id !== id; }); localStorage.setItem('P69S_DATA', JSON.stringify(db)); draw(); } }
@@ -198,7 +203,7 @@
         function closeSet() { for(var k in rates) { rates[k] = parseFloat(document.getElementById('rt-'+k).value) || 0; } localStorage.setItem('P69S_RT', JSON.stringify(rates)); document.getElementById('set-modal').style.display = 'none'; draw(); }
         function openSave() { document.getElementById('save-modal').style.display = 'flex'; }
         function closeSave() { document.getElementById('save-modal').style.display = 'none'; }
-        function generatePrintable() { var txt = ""; for(var i=0; i<db.length; i++) { txt += db[i].d + " - " + db[i].p + " : " + db[i].val.toFixed(2) + "€ ("+db[i].hStr+")\n"; } document.getElementById('backup-zone').value = txt; }
+        function generatePrintable() { var txt = "--- RÉCAPITULATIF ---\n"; for(var i=0; i<db.length; i++) { txt += db[i].d + " - " + db[i].p + " : " + db[i].val.toFixed(2) + "€ ("+db[i].hStr+")\n"; } document.getElementById('backup-zone').value = txt; }
         document.getElementById('in-date').valueAsDate = new Date();
         draw();
     </script>
