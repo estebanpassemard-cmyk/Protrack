@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrack V84</title>
+    <title>ProTrack V85</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background: #0f172a; color: white; font-family: sans-serif; margin: 0; padding-bottom: 90px; }
@@ -13,7 +13,6 @@
         .nav-item.active { color: #3b82f6; border-top: 3px solid #3b82f6; background: rgba(59, 130, 246, 0.1); }
         .page { display: none; padding: 15px; width: 100%; }
         
-        /* CARTES AVEC DOUBLE LISERÉ SYMÉTRIQUE */
         .card { background: #1e293b; border-radius: 12px; padding: 15px; margin-bottom: 15px; border: 1px solid #334155; position: relative; }
         .card.is-pending { border-left: 6px solid #3b82f6; border-right: 6px solid #3b82f6; }
         .card.is-billed { border: 2px solid #10b981; border-left: 6px solid #10b981; border-right: 6px solid #10b981; background: rgba(16, 185, 129, 0.03); }
@@ -44,7 +43,7 @@
 <body>
 
     <div id="pg0" class="page" style="display:block;">
-        <div class="version-tag">V84</div>
+        <div class="version-tag">V85</div>
         <div class="top-bar">
             <div class="icon-btn" onclick="openSet()">⚙️</div>
             <div class="icon-btn" onclick="openSave()">💾</div>
@@ -63,23 +62,18 @@
                 <option value="Pose Omnes">Pose Omnes</option>
                 <option value="Jours OFF">Jours OFF</option>
             </select>
-
             <div class="toggle-row">
                 <input type="checkbox" id="check-long" onchange="toggleLong()">
                 <label for="check-long">Journée à rallonge</label>
             </div>
-
             <div class="label">Matin</div>
             <div class="flex-row"><input type="time" id="s1" class="input"><input type="time" id="e1" class="input"></div>
-            
             <div class="label">Après-midi</div>
             <div class="flex-row"><input type="time" id="s2" class="input"><input type="time" id="e2" class="input"></div>
-            
             <div id="bloc3">
                 <div class="label">Soir</div>
                 <div class="flex-row"><input type="time" id="s3" class="input"><input type="time" id="e3" class="input"></div>
             </div>
-
             <button class="btn" onclick="addItem()">ENREGISTRER</button>
         </div>
         <div id="recent-list"></div>
@@ -104,7 +98,7 @@
     </div>
 
     <div id="set-modal" class="modal"><div class="card" style="width:100%; margin-top:20px;"><h3>TARIFS</h3><div id="price-inputs"></div><button class="btn" onclick="closeSet()">FERMER</button></div></div>
-    <div id="save-modal" class="modal"><div class="card" style="width:100%; margin-top:20px;"><h3>BILAN TEXTE</h3><button class="btn" style="background:#10b981; margin-bottom:10px" onclick="generatePrintable()">GÉNÉRER LE RÉCAPITULATIF</button><textarea id="backup-zone" readonly></textarea><button class="btn" onclick="closeSave()">FERMER</button></div></div>
+    <div id="save-modal" class="modal"><div class="card" style="width:100%; margin-top:20px;"><h3>BILAN TEXTE CHRONO</h3><button class="btn" style="background:#10b981; margin-bottom:10px" onclick="generatePrintable()">GÉNÉRER LE RÉCAPITULATIF</button><textarea id="backup-zone" readonly></textarea><button class="btn" onclick="closeSave()">FERMER</button></div></div>
 
     <script>
         var db = JSON.parse(localStorage.getItem('P69S_DATA') || '[]');
@@ -165,18 +159,15 @@
             var plist = [];
             db.forEach(o => { if(!plist.includes(o.p)) plist.push(o.p); });
             document.getElementById('proj-list').innerHTML = plist.map(x => '<option value="'+x+'">').join('');
-            
             var rec = "";
             for(var r=0; r<Math.min(db.length, 3); r++){
                 var o = db[r];
                 rec += `<div class="card" style="font-size:11px; margin-bottom:10px;"><b>${o.p}</b><span style="float:right;">${o.val.toFixed(2)}€</span><br><span style="color:#94a3b8;">${o.d.split('-').reverse().join('/')} | ${o.hStr}</span></div>`;
             }
             document.getElementById('recent-list').innerHTML = rec;
-
             var hB="", hA="", tAF=0, tF=0;
             var groups = {};
             db.forEach(it => { groups[it.p] = groups[it.p] || []; groups[it.p].push(it); });
-
             for (var proj in groups) {
                 var isB = billed.includes(proj), isA = archived.includes(proj);
                 var totVal = 0, lines = "";
@@ -206,19 +197,28 @@
 
         function generatePrintable() { 
             var groups = {};
+            // Groupement par projet
             db.forEach(it => { groups[it.p] = groups[it.p] || []; groups[it.p].push(it); });
-            var txt = "--- RÉCAPITULATIF PAR PROJET ---\n\n";
+            
+            var txt = "--- RÉCAPITULATIF CHRONOLOGIQUE ---\n\n";
             for (var proj in groups) {
                 var pTot = 0;
                 txt += "PROJET : " + proj + "\n";
                 txt += "--------------------------------\n";
-                groups[proj].forEach(i => {
+                
+                // Tri des lignes par date (ascendant)
+                var sortedLines = groups[proj].sort((a, b) => new Date(a.d) - new Date(b.d));
+                
+                sortedLines.forEach(i => {
                     var d = i.d.split('-').reverse().join('/');
                     var h = i.dur > 0 ? "(" + i.dur.toFixed(2) + "h)" : "";
-                    txt += `${d} | ${i.t} ${h} : ${i.val.toFixed(2)}€\n`;
+                    txt += `${d} | ${i.t} ${h}\n`;
+                    txt += `Détail : ${i.hStr}\n`; // Horaires précis
+                    txt += `Prix   : ${i.val.toFixed(2)}€\n`;
+                    txt += `----------------\n`;
                     pTot += i.val;
                 });
-                txt += "TOTAL PROJET : " + pTot.toFixed(2) + "€\n\n";
+                txt += "TOTAL PROJET : " + pTot.toFixed(2) + "€\n\n\n";
             }
             document.getElementById('backup-zone').value = txt; 
         }
