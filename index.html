@@ -3,30 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrack V68.GOLD</title>
+    <title>ProTrack V68.ULTIMATE</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background: #0f172a; color: white; font-family: sans-serif; margin: 0; padding-bottom: 90px; }
-        
-        /* Indicateur de version */
-        .version-tag { position: absolute; top: 10px; right: 10px; font-size: 10px; color: #475569; z-index: 10; }
-
+        .version-tag { position: absolute; top: 10px; right: 10px; font-size: 11px; color: #10b981; font-weight: bold; z-index: 1000; }
         .nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: #1e293b; display: flex; border-top: 1px solid #475569; z-index: 9999; }
         .nav-item { flex: 1; color: #64748b; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px; cursor: pointer; }
         .nav-item.active { color: #3b82f6; border-top: 3px solid #3b82f6; background: rgba(59, 130, 246, 0.1); }
-        
         .page { display: none; padding: 15px; }
         .active-page { display: block !important; }
-        
         .card { background: #1e293b; border-radius: 10px; padding: 15px; margin-bottom: 15px; border: 1px solid #334155; position: relative; }
         .input { background: #0f172a; border: 1px solid #475569; color: white; border-radius: 6px; padding: 10px; width: 100%; font-size: 16px; margin-bottom: 10px; display: block; }
         .btn { background: #2563eb; color: white; padding: 15px; border-radius: 10px; font-weight: bold; border: none; font-size: 16px; width: 100%; margin-top: 5px; }
         .btn-sec { background: #334155; padding: 10px; font-size: 10px; color: white; border-radius: 5px; text-align: center; font-weight: bold; flex: 1; border: none; }
-        
         .row-item { border-bottom: 1px solid #475569; padding: 10px 0; }
         .blue-h { color: #3b82f6; font-weight: bold; font-size: 11px; display: block; margin-top: 4px; }
         .type-tag { font-size: 10px; color: #94a3b8; font-style: italic; }
-        
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .flex-row { display: flex; gap: 5px; align-items: center; margin-bottom: 10px; }
         .label { font-size: 10px; color: #94a3b8; margin-bottom: 5px; text-transform: uppercase; }
@@ -36,7 +29,7 @@
 </head>
 <body>
 
-    <div class="version-tag">V68.FINAL-GOLD</div>
+    <div class="version-tag">V68.ULTIMATE</div>
 
     <div class="nav">
         <div id="nv0" class="nav-item active" onclick="go(0)">Saisie</div>
@@ -96,10 +89,10 @@
     </div>
 
     <script>
-        var db = JSON.parse(localStorage.getItem('PT_DATA_GOLD') || '[]');
-        var billed = JSON.parse(localStorage.getItem('PT_BILL_GOLD') || '[]');
-        var archived = JSON.parse(localStorage.getItem('PT_ARCH_GOLD') || '[]');
-        var rates = JSON.parse(localStorage.getItem('PT_RT_GOLD')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
+        var db = JSON.parse(localStorage.getItem('PT_V68_ULTI') || '[]');
+        var billed = JSON.parse(localStorage.getItem('PT_V68_BILL') || '[]');
+        var archived = JSON.parse(localStorage.getItem('PT_V68_ARCH') || '[]');
+        var rates = JSON.parse(localStorage.getItem('PT_V68_RT')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
 
         function go(n) {
             var pgs = ['pg0','pg1','pg2'];
@@ -118,31 +111,33 @@
             var t = document.getElementById('in-type').value;
             if(!d) return alert("Date manquante");
 
-            var times = [
-                toM(document.getElementById('s1').value),
-                toM(document.getElementById('e1').value),
-                toM(document.getElementById('s2').value),
-                toM(document.getElementById('e2').value)
-            ].filter(function(m) { return m > -1; });
-
+            var vS1 = document.getElementById('s1').value, vE1 = document.getElementById('e1').value;
+            var vS2 = document.getElementById('s2').value, vE2 = document.getElementById('e2').value;
+            
+            var s1=toM(vS1), e1=toM(vE1), s2=toM(vS2), e2=toM(vE2);
             var val=0, dur=0, hStr="";
 
             if(t.indexOf('Pose') > -1 || t === 'Jours OFF') {
                 val = (t==='Pose Piges') ? rates.piges : (t==='Pose Omnes' ? rates.omnes : rates.off);
                 hStr = "FORFAIT";
-            } else if (times.length >= 2) {
-                var debutAbsolu = Math.min.apply(null, times);
-                var finAbsolue = Math.max.apply(null, times);
-                dur = (finAbsolue - debutAbsolu) / 60;
-                val = dur * (t==='Production' ? rates.prod : rates.trajet);
+            } else {
+                var m1 = (s1 > -1 && e1 > s1) ? (e1 - s1) : 0;
+                var m2 = (s2 > -1 && e2 > s2) ? (e2 - s2) : 0;
                 
-                var h1 = document.getElementById('s1').value || document.getElementById('e1').value || "??";
-                var h2 = document.getElementById('e2').value || document.getElementById('s2').value || "??";
-                hStr = h1 + " > " + h2;
+                if (m1 > 0 && m2 > 0) {
+                    dur = (m1 + m2) / 60;
+                    hStr = vS1 + "-" + vE1 + " | " + vS2 + "-" + vE2;
+                } else if (s1 > -1 && e2 > s1) {
+                    dur = (e2 - s1) / 60;
+                    hStr = vS1 + " > " + vE2;
+                } else if (m1 > 0) {
+                    dur = m1 / 60; hStr = vS1 + " > " + vE1;
+                }
+                val = dur * (t==='Production' ? rates.prod : rates.trajet);
             }
 
             db.unshift({ id: new Date().getTime(), d: d, p: p, t: t, val: val, hStr: hStr, dur: dur });
-            localStorage.setItem('PT_DATA_GOLD', JSON.stringify(db));
+            localStorage.setItem('PT_V68_ULTI', JSON.stringify(db));
             ['in-proj','s1','e1','s2','e2'].forEach(function(id){ document.getElementById(id).value = ""; });
             draw();
             alert("Enregistré !");
@@ -151,7 +146,7 @@
         function del(id) {
             if(confirm("Supprimer ?")) {
                 db = db.filter(function(o) { return o.id !== id; });
-                localStorage.setItem('PT_DATA_GOLD', JSON.stringify(db));
+                localStorage.setItem('PT_V68_ULTI', JSON.stringify(db));
                 draw();
             }
         }
@@ -161,7 +156,6 @@
             db.forEach(function(o){ if(plist.indexOf(o.p)==-1) plist.push(o.p); });
             document.getElementById('proj-list').innerHTML = plist.map(function(x){ return '<option value="'+x+'">'; }).join('');
 
-            // LISTE SAISIE
             document.getElementById('recent-list').innerHTML = db.slice(0, 3).map(function(o) {
                 return '<div class="card" style="font-size:12px;">' +
                        '<b>'+o.p+'</b> <span class="type-tag">('+o.t+')</span> - '+o.val.toFixed(2)+'€ ' +
@@ -192,31 +186,4 @@
                     lines + '<div style="display:flex; gap:10px; margin-top:15px;">' +
                     '<button class="btn-sec" onclick="tB(\''+proj+'\')">'+(isB ? 'À FACTURER' : 'FACTURÉ')+'</button>' +
                     '<button class="btn-sec" onclick="tA(\''+proj+'\')">'+(isA ? 'RÉACTIVER' : 'ARCHIVER')+'</button></div></div>';
-                if(isA) hA += card; else hB += card;
-            }
-            document.getElementById('list-bilan').innerHTML = hB || "Bilan vide";
-            document.getElementById('list-archive').innerHTML = hA || "Archives vides";
-            document.getElementById('sum-af').innerText = tAF.toFixed(2) + "€";
-            document.getElementById('sum-f').innerText = tF.toFixed(2) + "€";
-        }
-
-        window.tB = function(p) { if(billed.indexOf(p) > -1) billed = billed.filter(function(x){return x!==p;}); else billed.push(p); localStorage.setItem('PT_BILL_GOLD', JSON.stringify(billed)); draw(); };
-        window.tA = function(p) { if(archived.indexOf(p) > -1) archived = archived.filter(function(x){return x!==p;}); else archived.push(p); localStorage.setItem('PT_ARCH_GOLD', JSON.stringify(archived)); draw(); };
-
-        function openSet() {
-            var h = "";
-            for(var k in rates) { h += '<label class="label">'+k+'</label><input type="number" id="rt-'+k+'" value="'+rates[k]+'" class="input">'; }
-            document.getElementById('price-inputs').innerHTML = h;
-            document.getElementById('set-modal').style.display = 'flex';
-        }
-        function closeSet() {
-            for(var k in rates) { rates[k] = parseFloat(document.getElementById('rt-'+k).value) || 0; }
-            localStorage.setItem('PT_RT_GOLD', JSON.stringify(rates));
-            document.getElementById('set-modal').style.display = 'none';
-            draw();
-        }
-        document.getElementById('in-date').valueAsDate = new Date();
-        draw();
-    </script>
-</body>
-</html>
+                if(is
