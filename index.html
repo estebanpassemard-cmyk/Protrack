@@ -3,19 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrack V68.RECOVERY</title>
+    <title>ProTrack V68.FINAL-CLEAN</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background: #0f172a; color: white; font-family: sans-serif; margin: 0; padding-bottom: 90px; }
-        .version-tag { position: absolute; top: 10px; right: 10px; font-size: 11px; color: #fbbf24; font-weight: bold; z-index: 1000; }
         
+        .version-tag { position: absolute; top: 10px; right: 10px; font-size: 11px; color: #3b82f6; font-weight: bold; }
+
+        /* NAVIGATION FIXE */
         .nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: #1e293b; display: flex; border-top: 1px solid #475569; z-index: 9999; }
         .nav-item { flex: 1; color: #64748b; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px; cursor: pointer; }
         .nav-item.active { color: #3b82f6; border-top: 3px solid #3b82f6; background: rgba(59, 130, 246, 0.1); }
         
-        .page { display: none; padding: 15px; }
-        .active-page { display: block !important; }
+        /* LOGIQUE D'AFFICHAGE DES PAGES (SÉCURISÉE) */
+        .page { display: none; padding: 15px; width: 100%; }
         
+        /* Si le body a la classe p0, seule la page 0 s'affiche, etc. */
+        body.p0 #pg0 { display: block !important; }
+        body.p1 #pg1 { display: block !important; }
+        body.p2 #pg2 { display: block !important; }
+
+        /* DESIGN DES CARTES ET INPUTS */
         .card { background: #1e293b; border-radius: 10px; padding: 15px; margin-bottom: 15px; border: 1px solid #334155; position: relative; }
         .input { background: #0f172a; border: 1px solid #475569; color: white; border-radius: 6px; padding: 10px; width: 100%; font-size: 16px; margin-bottom: 10px; display: block; }
         .btn { background: #2563eb; color: white; padding: 15px; border-radius: 10px; font-weight: bold; border: none; font-size: 16px; width: 100%; margin-top: 5px; }
@@ -32,9 +40,7 @@
         .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:10000; padding:20px; align-items:center; }
     </style>
 </head>
-<body>
-
-    <div class="version-tag">V68.RECOVERY</div>
+<body class="p0"> <div class="version-tag">V68.FINAL-CLEAN</div>
 
     <div class="nav">
         <div id="nv0" class="nav-item active" onclick="go(0)">Saisie</div>
@@ -42,12 +48,12 @@
         <div id="nv2" class="nav-item" onclick="go(2)">Archives</div>
     </div>
 
-    <div id="pg0" class="page active-page">
-        <div onclick="openSet()" style="font-size:25px; margin-bottom:15px; cursor:pointer;">⚙️</div>
+    <div id="pg0" class="page">
+        <div onclick="openSet()" style="font-size:25px; margin-bottom:15px; cursor:pointer; width:fit-content;">⚙️</div>
         <div class="card">
             <div class="grid">
                 <input type="date" id="in-date" class="input">
-                <input type="text" id="in-proj" placeholder="PROJET" class="input" list="proj-list">
+                <input type="text" id="in-proj" placeholder="PROJET" class="input" list="proj-list" autocomplete="off">
                 <datalist id="proj-list"></datalist>
             </div>
             <select id="in-type" class="input">
@@ -57,19 +63,10 @@
                 <option value="Pose Omnes">Pose Omnes</option>
                 <option value="Jours OFF">Jours OFF</option>
             </select>
-            
             <div class="label">Matin</div>
-            <div class="flex-row">
-                <input type="time" id="s1" class="input">
-                <input type="time" id="e1" class="input">
-            </div>
-
+            <div class="flex-row"><input type="time" id="s1" class="input"><input type="time" id="e1" class="input"></div>
             <div class="label">Après-midi</div>
-            <div class="flex-row">
-                <input type="time" id="s2" class="input">
-                <input type="time" id="e2" class="input">
-            </div>
-            
+            <div class="flex-row"><input type="time" id="s2" class="input"><input type="time" id="e2" class="input"></div>
             <button class="btn" onclick="addItem()">ENREGISTRER</button>
         </div>
         <div id="recent-list"></div>
@@ -83,7 +80,9 @@
         <div id="list-bilan"></div>
     </div>
 
-    <div id="pg2" class="page"><div id="list-archive"></div></div>
+    <div id="pg2" class="page">
+        <div id="list-archive"></div>
+    </div>
 
     <div id="set-modal" class="modal">
         <div class="card" style="width:100%;">
@@ -94,19 +93,21 @@
     </div>
 
     <script>
-        // Clés de stockage rafraîchies pour éviter les conflits
-        let db = JSON.parse(localStorage.getItem('P68_DATA') || '[]');
-        let billed = JSON.parse(localStorage.getItem('P68_BILL') || '[]');
-        let archived = JSON.parse(localStorage.getItem('P68_ARCH') || '[]');
-        let rates = JSON.parse(localStorage.getItem('P68_RT')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
+        let db = JSON.parse(localStorage.getItem('PRO68_DATA') || '[]');
+        let billed = JSON.parse(localStorage.getItem('PRO68_BILL') || '[]');
+        let archived = JSON.parse(localStorage.getItem('PRO68_ARCH') || '[]');
+        let rates = JSON.parse(localStorage.getItem('PRO68_RT')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
 
         function go(n) {
-            document.querySelectorAll('.page').forEach((p, i) => {
-                p.style.display = (i === n) ? 'block' : 'none';
-            });
+            // On change la classe du body : p0, p1 ou p2
+            document.body.className = 'p' + n;
+            
+            // On gère l'état visuel des boutons de la nav
             document.querySelectorAll('.nav-item').forEach((nv, i) => {
-                nv.className = (i === n) ? 'nav-item active' : 'nav-item';
+                nv.classList.toggle('active', i === n);
             });
+            
+            window.scrollTo(0, 0);
             draw();
         }
 
@@ -123,14 +124,12 @@
             let s1=toM(vS1), e1=toM(vE1), s2=toM(vS2), e2=toM(vE2);
             
             let val=0, dur=0, hStr="";
-
             if(t.includes('Pose') || t === 'Jours OFF') {
                 val = (t==='Pose Piges') ? rates.piges : (t==='Pose Omnes' ? rates.omnes : rates.off);
                 hStr = "FORFAIT";
             } else {
                 let m1 = (s1 > -1 && e1 > s1) ? (e1 - s1) : 0;
                 let m2 = (s2 > -1 && e2 > s2) ? (e2 - s2) : 0;
-                
                 if (m1 > 0 && m2 > 0) {
                     dur = (m1 + m2) / 60;
                     hStr = vS1 + "-" + vE1 + " | " + vS2 + "-" + vE2;
@@ -144,7 +143,7 @@
             }
 
             db.unshift({ id: Date.now(), d, p, t, val, hStr, dur });
-            localStorage.setItem('P68_DATA', JSON.stringify(db));
+            localStorage.setItem('PRO68_DATA', JSON.stringify(db));
             ['in-proj','s1','e1','s2','e2'].forEach(id => document.getElementById(id).value = "");
             draw();
             alert("Enregistré !");
@@ -153,7 +152,7 @@
         function del(id) {
             if(confirm("Supprimer ?")) {
                 db = db.filter(o => o.id !== id);
-                localStorage.setItem('P68_DATA', JSON.stringify(db));
+                localStorage.setItem('PRO68_DATA', JSON.stringify(db));
                 draw();
             }
         }
@@ -202,14 +201,14 @@
                 </div>`;
                 if(isA) hA += card; else hB += card;
             }
-            document.getElementById('list-bilan').innerHTML = hB || "Bilan vide";
-            document.getElementById('list-archive').innerHTML = hA || "Archives vides";
+            document.getElementById('list-bilan').innerHTML = hB || "Vide";
+            document.getElementById('list-archive').innerHTML = hA || "Vide";
             document.getElementById('sum-af').innerText = tAF.toFixed(2) + "€";
             document.getElementById('sum-f').innerText = tF.toFixed(2) + "€";
         }
 
-        window.tB = (p) => { if(billed.includes(p)) billed = billed.filter(x=>x!==p); else billed.push(p); localStorage.setItem('P68_BILL', JSON.stringify(billed)); draw(); };
-        window.tA = (p) => { if(archived.includes(p)) archived = archived.filter(x=>x!==p); else archived.push(p); localStorage.setItem('P68_ARCH', JSON.stringify(archived)); draw(); };
+        window.tB = p => { if(billed.includes(p)) billed = billed.filter(x=>x!==p); else billed.push(p); localStorage.setItem('PRO68_BILL', JSON.stringify(billed)); draw(); };
+        window.tA = p => { if(archived.includes(p)) archived = archived.filter(x=>x!==p); else archived.push(p); localStorage.setItem('PRO68_ARCH', JSON.stringify(archived)); draw(); };
 
         function openSet() {
             let h = "";
@@ -219,7 +218,7 @@
         }
         function closeSet() {
             for(let k in rates) { rates[k] = parseFloat(document.getElementById('rt-'+k).value) || 0; }
-            localStorage.setItem('P68_RT', JSON.stringify(rates));
+            localStorage.setItem('PRO68_RT', JSON.stringify(rates));
             document.getElementById('set-modal').style.display = 'none';
             draw();
         }
