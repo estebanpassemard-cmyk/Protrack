@@ -3,29 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrack V68.Final-Total</title>
+    <title>ProTrack V68.GOLD</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background: #0f172a; color: white; font-family: sans-serif; margin: 0; padding-bottom: 90px; }
+        
+        /* Indicateur de version */
+        .version-tag { position: absolute; top: 10px; right: 10px; font-size: 10px; color: #475569; z-index: 10; }
+
         .nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: #1e293b; display: flex; border-top: 1px solid #475569; z-index: 9999; }
         .nav-item { flex: 1; color: #64748b; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px; cursor: pointer; }
         .nav-item.active { color: #3b82f6; border-top: 3px solid #3b82f6; background: rgba(59, 130, 246, 0.1); }
+        
         .page { display: none; padding: 15px; }
         .active-page { display: block !important; }
+        
         .card { background: #1e293b; border-radius: 10px; padding: 15px; margin-bottom: 15px; border: 1px solid #334155; position: relative; }
         .input { background: #0f172a; border: 1px solid #475569; color: white; border-radius: 6px; padding: 10px; width: 100%; font-size: 16px; margin-bottom: 10px; display: block; }
         .btn { background: #2563eb; color: white; padding: 15px; border-radius: 10px; font-weight: bold; border: none; font-size: 16px; width: 100%; margin-top: 5px; }
         .btn-sec { background: #334155; padding: 10px; font-size: 10px; color: white; border-radius: 5px; text-align: center; font-weight: bold; flex: 1; border: none; }
+        
         .row-item { border-bottom: 1px solid #475569; padding: 10px 0; }
         .blue-h { color: #3b82f6; font-weight: bold; font-size: 11px; display: block; margin-top: 4px; }
+        .type-tag { font-size: 10px; color: #94a3b8; font-style: italic; }
+        
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .flex-row { display: flex; gap: 5px; align-items: center; }
+        .flex-row { display: flex; gap: 5px; align-items: center; margin-bottom: 10px; }
         .label { font-size: 10px; color: #94a3b8; margin-bottom: 5px; text-transform: uppercase; }
         .del-btn { color: #ef4444; border: none; background: none; font-size: 18px; cursor: pointer; }
         .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:10000; padding:20px; align-items:center; }
     </style>
 </head>
 <body>
+
+    <div class="version-tag">V68.FINAL-GOLD</div>
 
     <div class="nav">
         <div id="nv0" class="nav-item active" onclick="go(0)">Saisie</div>
@@ -49,13 +60,13 @@
                 <option value="Jours OFF">Jours OFF</option>
             </select>
             
-            <div class="label">Matin (Début - Fin)</div>
+            <div class="label">Matin</div>
             <div class="flex-row">
                 <input type="time" id="s1" class="input">
                 <input type="time" id="e1" class="input">
             </div>
 
-            <div class="label">Après-midi (Début - Fin)</div>
+            <div class="label">Après-midi</div>
             <div class="flex-row">
                 <input type="time" id="s2" class="input">
                 <input type="time" id="e2" class="input">
@@ -85,10 +96,10 @@
     </div>
 
     <script>
-        var db = JSON.parse(localStorage.getItem('PT_V68_DATA') || '[]');
-        var billed = JSON.parse(localStorage.getItem('PT_V68_BILL') || '[]');
-        var archived = JSON.parse(localStorage.getItem('PT_V68_ARCH') || '[]');
-        var rates = JSON.parse(localStorage.getItem('PT_V68_RT')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
+        var db = JSON.parse(localStorage.getItem('PT_DATA_GOLD') || '[]');
+        var billed = JSON.parse(localStorage.getItem('PT_BILL_GOLD') || '[]');
+        var archived = JSON.parse(localStorage.getItem('PT_ARCH_GOLD') || '[]');
+        var rates = JSON.parse(localStorage.getItem('PT_RT_GOLD')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
 
         function go(n) {
             var pgs = ['pg0','pg1','pg2'];
@@ -120,21 +131,18 @@
                 val = (t==='Pose Piges') ? rates.piges : (t==='Pose Omnes' ? rates.omnes : rates.off);
                 hStr = "FORFAIT";
             } else if (times.length >= 2) {
-                // CALCUL INCLUANT LA PAUSE : On prend le min et le max
                 var debutAbsolu = Math.min.apply(null, times);
                 var finAbsolue = Math.max.apply(null, times);
-                
                 dur = (finAbsolue - debutAbsolu) / 60;
                 val = dur * (t==='Production' ? rates.prod : rates.trajet);
                 
-                // On affiche le vrai début et la vraie fin
                 var h1 = document.getElementById('s1').value || document.getElementById('e1').value || "??";
-                var h2 = document.getElementById('e2').value || document.getElementById('s2').value || document.getElementById('e1').value || "??";
+                var h2 = document.getElementById('e2').value || document.getElementById('s2').value || "??";
                 hStr = h1 + " > " + h2;
             }
 
             db.unshift({ id: new Date().getTime(), d: d, p: p, t: t, val: val, hStr: hStr, dur: dur });
-            localStorage.setItem('PT_V68_DATA', JSON.stringify(db));
+            localStorage.setItem('PT_DATA_GOLD', JSON.stringify(db));
             ['in-proj','s1','e1','s2','e2'].forEach(function(id){ document.getElementById(id).value = ""; });
             draw();
             alert("Enregistré !");
@@ -143,7 +151,7 @@
         function del(id) {
             if(confirm("Supprimer ?")) {
                 db = db.filter(function(o) { return o.id !== id; });
-                localStorage.setItem('PT_V68_DATA', JSON.stringify(db));
+                localStorage.setItem('PT_DATA_GOLD', JSON.stringify(db));
                 draw();
             }
         }
@@ -153,9 +161,11 @@
             db.forEach(function(o){ if(plist.indexOf(o.p)==-1) plist.push(o.p); });
             document.getElementById('proj-list').innerHTML = plist.map(function(x){ return '<option value="'+x+'">'; }).join('');
 
+            // LISTE SAISIE
             document.getElementById('recent-list').innerHTML = db.slice(0, 3).map(function(o) {
                 return '<div class="card" style="font-size:12px;">' +
-                       '<b>'+o.p+'</b> - '+o.val.toFixed(2)+'€ <button class="del-btn" onclick="del('+o.id+')" style="float:right">🗑️</button><br>' +
+                       '<b>'+o.p+'</b> <span class="type-tag">('+o.t+')</span> - '+o.val.toFixed(2)+'€ ' +
+                       '<button class="del-btn" onclick="del('+o.id+')" style="float:right">🗑️</button><br>' +
                        '<span style="color:#94a3b8; font-size:10px;">'+o.d.split('-').reverse().join('/')+' | '+o.hStr+'</span></div>';
             }).join('');
 
@@ -171,9 +181,9 @@
                 if(!isA) { if(isB) tF += total; else tAF += total; }
 
                 var lines = groups[proj].map(function(o) {
-                    return '<div class="row-item"><div style="display:flex; justify-content:space-between; font-size:12px;">' +
-                           '<span>'+o.d.split('-').reverse().join('/')+'</span><span>'+o.hStr+'</span>' +
-                           '<span>'+o.val.toFixed(2)+'€ <button class="del-btn" onclick="del('+o.id+')" style="font-size:14px;">×</button></span></div>' +
+                    return '<div class="row-item"><div style="display:flex; justify-content:space-between; align-items:center; font-size:12px;">' +
+                           '<span>'+o.d.split('-').reverse().join('/')+' <span class="type-tag">('+o.t+')</span></span><span>'+o.hStr+'</span>' +
+                           '<span>'+o.val.toFixed(2)+'€ <button class="del-btn" onclick="del('+o.id+')" style="font-size:14px; margin-left:5px;">🗑️</button></span></div>' +
                            (o.dur > 0 ? '<span class="blue-h">TOTAL : '+o.dur.toFixed(2)+'h</span>' : '') + '</div>';
                 }).join('');
 
@@ -184,14 +194,14 @@
                     '<button class="btn-sec" onclick="tA(\''+proj+'\')">'+(isA ? 'RÉACTIVER' : 'ARCHIVER')+'</button></div></div>';
                 if(isA) hA += card; else hB += card;
             }
-            document.getElementById('list-bilan').innerHTML = hB || "Vide";
-            document.getElementById('list-archive').innerHTML = hA || "Vide";
+            document.getElementById('list-bilan').innerHTML = hB || "Bilan vide";
+            document.getElementById('list-archive').innerHTML = hA || "Archives vides";
             document.getElementById('sum-af').innerText = tAF.toFixed(2) + "€";
             document.getElementById('sum-f').innerText = tF.toFixed(2) + "€";
         }
 
-        window.tB = function(p) { if(billed.indexOf(p) > -1) billed = billed.filter(function(x){return x!==p;}); else billed.push(p); localStorage.setItem('PT_V68_BILL', JSON.stringify(billed)); draw(); };
-        window.tA = function(p) { if(archived.indexOf(p) > -1) archived = archived.filter(function(x){return x!==p;}); else archived.push(p); localStorage.setItem('PT_V68_ARCH', JSON.stringify(archived)); draw(); };
+        window.tB = function(p) { if(billed.indexOf(p) > -1) billed = billed.filter(function(x){return x!==p;}); else billed.push(p); localStorage.setItem('PT_BILL_GOLD', JSON.stringify(billed)); draw(); };
+        window.tA = function(p) { if(archived.indexOf(p) > -1) archived = archived.filter(function(x){return x!==p;}); else archived.push(p); localStorage.setItem('PT_ARCH_GOLD', JSON.stringify(archived)); draw(); };
 
         function openSet() {
             var h = "";
@@ -201,7 +211,7 @@
         }
         function closeSet() {
             for(var k in rates) { rates[k] = parseFloat(document.getElementById('rt-'+k).value) || 0; }
-            localStorage.setItem('PT_V68_RT', JSON.stringify(rates));
+            localStorage.setItem('PT_RT_GOLD', JSON.stringify(rates));
             document.getElementById('set-modal').style.display = 'none';
             draw();
         }
