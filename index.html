@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrack V68.1</title>
+    <title>ProTrack V68.2</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background: #0f172a; color: white; font-family: sans-serif; margin: 0; padding-bottom: 90px; }
@@ -36,7 +36,8 @@
         <div class="card">
             <div class="grid">
                 <input type="date" id="in-date" class="input">
-                <input type="text" id="in-proj" placeholder="PROJET" class="input">
+                <input type="text" id="in-proj" placeholder="PROJET" class="input" list="proj-list" autocomplete="off">
+                <datalist id="proj-list"></datalist>
             </div>
             <select id="in-type" class="input">
                 <option value="Production">Production</option>
@@ -101,15 +102,17 @@
                 val = t==='Pose Piges' ? rates.piges : (t==='Pose Omnes' ? rates.omnes : rates.off);
                 hStr = "FORFAIT";
             } else {
-                // Logique de calcul intelligente
                 let totalMin = 0;
+                // Calcul intelligent : Priorité aux blocs séparés, sinon calcul global S1 -> E2
                 if(s1 > -1 && e1 > s1) totalMin += (e1 - s1);
                 if(s2 > -1 && e2 > s2) totalMin += (e2 - s2);
-                // Cas journée continue (S1 et E2 remplis uniquement)
                 if(s1 > -1 && e2 > s1 && e1 === -1 && s2 === -1) totalMin = (e2 - s1);
 
                 dur = totalMin / 60;
-                hStr = (document.getElementById('s1').value || "??") + " > " + (document.getElementById('e2').value || document.getElementById('e1').value || "??");
+                // Formater l'affichage des heures
+                let start = document.getElementById('s1').value || "??";
+                let end = document.getElementById('e2').value || document.getElementById('e1').value || "??";
+                hStr = start + " > " + end;
                 val = dur * (t==='Production' ? rates.prod : rates.trajet);
             }
 
@@ -121,11 +124,15 @@
         }
 
         function draw() {
-            // Liste Saisie avec Détails
+            // Mise à jour de la liste de suggestions (Datalist)
+            const projList = [...new Set(db.map(o => o.p))];
+            document.getElementById('proj-list').innerHTML = projList.map(p => `<option value="${p}">`).join('');
+
+            // Liste Saisie avec Détails (Dernières entrées)
             document.getElementById('recent-list').innerHTML = db.slice(0, 5).map(o => `
                 <div class="card" style="font-size:12px; border-left: 3px solid #3b82f6;">
                     <div style="display:flex; justify-content:space-between;"><b>${o.p}</b> <span>${o.val.toFixed(2)}€</span></div>
-                    <div style="color:#94a3b8; font-size:10px; margin-top:5px;">${o.d.split('-').reverse().join('/')} | ${o.hStr}</div>
+                    <div style="color:#94a3b8; font-size:10px; margin-top:5px;">${o.d.split('-').reverse().join('/')} | ${o.hStr} | ${o.dur.toFixed(2)}h</div>
                 </div>
             `).join('');
 
@@ -169,16 +176,4 @@
 
         function openSet() {
             document.getElementById('price-inputs').innerHTML = Object.keys(rates).map(k => `<label class="label">${k}</label><input type="number" id="rt-${k}" value="${rates[k]}" class="input">`).join('');
-            document.getElementById('set-modal').style.display = 'flex';
-        }
-        function closeSet() {
-            Object.keys(rates).forEach(k => { rates[k] = parseFloat(document.getElementById('rt-'+k).value) || 0; });
-            localStorage.setItem('PT_V68_RATES', JSON.stringify(rates));
-            document.getElementById('set-modal').style.display = 'none';
-            draw();
-        }
-        document.getElementById('in-date').valueAsDate = new Date();
-        draw();
-    </script>
-</body>
-</html>
+            document.getElementById('set-modal').style.display =
