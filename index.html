@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrack V68.2</title>
+    <title>ProTrack V68.3 - STABLE</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background: #0f172a; color: white; font-family: sans-serif; margin: 0; padding-bottom: 90px; }
@@ -36,8 +36,7 @@
         <div class="card">
             <div class="grid">
                 <input type="date" id="in-date" class="input">
-                <input type="text" id="in-proj" placeholder="PROJET" class="input" list="proj-list" autocomplete="off">
-                <datalist id="proj-list"></datalist>
+                <input type="text" id="in-proj" placeholder="PROJET" class="input">
             </div>
             <select id="in-type" class="input">
                 <option value="Production">Production</option>
@@ -74,95 +73,88 @@
     </div>
 
     <script>
-        let db = JSON.parse(localStorage.getItem('PT_V68_DATA') || '[]');
-        let billed = JSON.parse(localStorage.getItem('PT_V68_BILL') || '[]');
-        let archived = JSON.parse(localStorage.getItem('PT_V68_ARCH') || '[]');
-        let rates = JSON.parse(localStorage.getItem('PT_V68_RATES')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
+        var db = JSON.parse(localStorage.getItem('PT_V68_DATA') || '[]');
+        var billed = JSON.parse(localStorage.getItem('PT_V68_BILL') || '[]');
+        var archived = JSON.parse(localStorage.getItem('PT_V68_ARCH') || '[]');
+        var rates = JSON.parse(localStorage.getItem('PT_V68_RATES')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
 
         function go(n) {
-            ['pg0','pg1','pg2'].forEach((p, i) => {
-                document.getElementById(p).classList.toggle('active-page', i === n);
-                document.getElementById('nv'+i).classList.toggle('active', i === n);
-            });
+            var pgs = ['pg0','pg1','pg2'];
+            for(var i=0; i<pgs.length; i++) {
+                document.getElementById(pgs[i]).style.display = (i === n) ? 'block' : 'none';
+                document.getElementById('nv'+i).className = (i === n) ? 'nav-item active' : 'nav-item';
+            }
             draw();
         }
 
         function addItem() {
-            const d = document.getElementById('in-date').value;
-            const p = document.getElementById('in-proj').value.toUpperCase() || "DIVERS";
-            const t = document.getElementById('in-type').value;
+            var d = document.getElementById('in-date').value;
+            var p = document.getElementById('in-proj').value.toUpperCase() || "DIVERS";
+            var t = document.getElementById('in-type').value;
             if(!d) return alert("Date manquante");
 
-            const toM = (v) => { if(!v) return -1; const s = v.split(':'); return parseInt(s[0])*60+parseInt(s[1]); };
-            let s1=toM(document.getElementById('s1').value), e1=toM(document.getElementById('e1').value);
-            let s2=toM(document.getElementById('s2').value), e2=toM(document.getElementById('e2').value);
+            function toM(v) { if(!v) return -1; var s = v.split(':'); return parseInt(s[0])*60+parseInt(s[1]); }
+            var s1=toM(document.getElementById('s1').value), e1=toM(document.getElementById('e1').value);
+            var s2=toM(document.getElementById('s2').value), e2=toM(document.getElementById('e2').value);
             
-            let val=0, hStr="", dur=0;
-            if(t.includes('Pose') || t === 'Jours OFF') {
+            var val=0, hStr="", dur=0;
+            if(t.indexOf('Pose') > -1 || t === 'Jours OFF') {
                 val = t==='Pose Piges' ? rates.piges : (t==='Pose Omnes' ? rates.omnes : rates.off);
                 hStr = "FORFAIT";
             } else {
-                let totalMin = 0;
-                // Calcul intelligent : Priorité aux blocs séparés, sinon calcul global S1 -> E2
+                var totalMin = 0;
                 if(s1 > -1 && e1 > s1) totalMin += (e1 - s1);
                 if(s2 > -1 && e2 > s2) totalMin += (e2 - s2);
                 if(s1 > -1 && e2 > s1 && e1 === -1 && s2 === -1) totalMin = (e2 - s1);
-
                 dur = totalMin / 60;
-                // Formater l'affichage des heures
-                let start = document.getElementById('s1').value || "??";
-                let end = document.getElementById('e2').value || document.getElementById('e1').value || "??";
-                hStr = start + " > " + end;
+                hStr = (document.getElementById('s1').value || "??") + " > " + (document.getElementById('e2').value || document.getElementById('e1').value || "??");
                 val = dur * (t==='Production' ? rates.prod : rates.trajet);
             }
 
-            db.unshift({ id: Date.now(), d, p, t, val, hStr, dur });
+            db.unshift({ id: new Date().getTime(), d: d, p: p, t: t, val: val, hStr: hStr, dur: dur });
             localStorage.setItem('PT_V68_DATA', JSON.stringify(db));
-            ['in-proj','s1','e1','s2','e2'].forEach(id => document.getElementById(id).value = "");
+            document.getElementById('in-proj').value = "";
             draw();
             alert("Enregistré");
         }
 
         function draw() {
-            // Mise à jour de la liste de suggestions (Datalist)
-            const projList = [...new Set(db.map(o => o.p))];
-            document.getElementById('proj-list').innerHTML = projList.map(p => `<option value="${p}">`).join('');
+            document.getElementById('recent-list').innerHTML = db.slice(0, 3).map(function(o) {
+                return '<div class="card" style="font-size:12px; border-left: 3px solid #3b82f6;">' +
+                       '<b>' + o.p + '</b> - ' + o.val.toFixed(2) + '€<br>' +
+                       '<span style="color:#94a3b8; font-size:10px;">' + o.d.split('-').reverse().join('/') + ' | ' + o.hStr + '</span></div>';
+            }).join('');
 
-            // Liste Saisie avec Détails (Dernières entrées)
-            document.getElementById('recent-list').innerHTML = db.slice(0, 5).map(o => `
-                <div class="card" style="font-size:12px; border-left: 3px solid #3b82f6;">
-                    <div style="display:flex; justify-content:space-between;"><b>${o.p}</b> <span>${o.val.toFixed(2)}€</span></div>
-                    <div style="color:#94a3b8; font-size:10px; margin-top:5px;">${o.d.split('-').reverse().join('/')} | ${o.hStr} | ${o.dur.toFixed(2)}h</div>
-                </div>
-            `).join('');
+            var hB="", hA="", tAF=0, tF=0;
+            var groups = {};
+            db.forEach(function(o) { groups[o.p] = groups[o.p] || []; groups[o.p].push(o); });
 
-            let hB="", hA="", tAF=0, tF=0;
-            const groups = db.reduce((acc, o) => { (acc[o.p] = acc[o.p] || []).push(o); return acc; }, {});
-
-            for (let proj in groups) {
-                const isB = billed.includes(proj);
-                const isA = archived.includes(proj);
-                const total = groups[proj].reduce((s, o) => s + o.val, 0);
+            for (var proj in groups) {
+                var isB = billed.indexOf(proj) > -1;
+                var isA = archived.indexOf(proj) > -1;
+                var total = 0;
+                groups[proj].forEach(function(o) { total += o.val; });
                 if(!isA) { if(isB) tF += total; else tAF += total; }
 
-                const lines = groups[proj].map(o => `
-                    <div class="row-item">
-                        <div style="display:flex; justify-content:space-between; font-size:12px;">
-                            <span>${o.d.split('-').reverse().join('/')}</span>
-                            <span>${o.hStr}</span>
-                            <span style="font-weight:bold;">${o.val.toFixed(2)}€</span>
-                        </div>
-                        ${o.dur > 0 ? `<span class="blue-h">TOTAL : ${o.dur.toFixed(2)}h</span>` : ''}
-                    </div>`).join('');
+                var lines = groups[proj].map(function(o) {
+                    return '<div class="row-item">' +
+                           '<div style="display:flex; justify-content:space-between; font-size:12px;">' +
+                           '<span>' + o.d.split('-').reverse().join('/') + '</span>' +
+                           '<span>' + o.hStr + '</span>' +
+                           '<span style="font-weight:bold;">' + o.val.toFixed(2) + '€</span>' +
+                           '</div>' +
+                           (o.dur > 0 ? '<span class="blue-h">TOTAL : ' + o.dur.toFixed(2) + 'h</span>' : '') +
+                           '</div>';
+                }).join('');
 
-                const card = `<div class="card" style="border-left: 5px solid ${isB ? '#10b981' : '#3b82f6'}">
-                    <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:10px;"><span>${proj}</span><span>${total.toFixed(2)}€</span></div>
-                    ${lines}
-                    <div style="display:flex; gap:10px; margin-top:15px;">
-                        <button class="btn-sec" onclick="tB('${proj}')">${isB ? 'À FACTURER' : 'FACTURÉ'}</button>
-                        <button class="btn-sec" onclick="tA('${proj}')">${isA ? 'RÉACTIVER' : 'ARCHIVER'}</button>
-                    </div>
-                </div>`;
+                var card = '<div class="card" style="border-left: 5px solid ' + (isB ? '#10b981' : '#3b82f6') + '">' +
+                    '<div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:10px;"><span>' + proj + '</span><span>' + total.toFixed(2) + '€</span></div>' +
+                    lines +
+                    '<div style="display:flex; gap:10px; margin-top:15px;">' +
+                        '<button class="btn-sec" onclick="tB(\'' + proj + '\')">' + (isB ? 'À FACTURER' : 'FACTURÉ') + '</button>' +
+                        '<button class="btn-sec" onclick="tA(\'' + proj + '\')">' + (isA ? 'RÉACTIVER' : 'ARCHIVER') + '</button>' +
+                    '</div>' +
+                '</div>';
                 if(isA) hA += card; else hB += card;
             }
             document.getElementById('list-bilan').innerHTML = hB || "Aucun projet";
@@ -171,9 +163,24 @@
             document.getElementById('sum-f').innerText = tF.toFixed(2) + "€";
         }
 
-        window.tB = (p) => { billed.includes(p) ? billed = billed.filter(x=>x!==p) : billed.push(p); localStorage.setItem('PT_V68_BILL', JSON.stringify(billed)); draw(); };
-        window.tA = (p) => { archived.includes(p) ? archived = archived.filter(x=>x!==p) : archived.push(p); localStorage.setItem('PT_V68_ARCH', JSON.stringify(archived)); draw(); };
+        window.tB = function(p) { if(billed.indexOf(p) > -1) billed = billed.filter(function(x){return x!==p;}); else billed.push(p); localStorage.setItem('PT_V68_BILL', JSON.stringify(billed)); draw(); };
+        window.tA = function(p) { if(archived.indexOf(p) > -1) archived = archived.filter(function(x){return x!==p;}); else archived.push(p); localStorage.setItem('PT_V68_ARCH', JSON.stringify(archived)); draw(); };
 
         function openSet() {
-            document.getElementById('price-inputs').innerHTML = Object.keys(rates).map(k => `<label class="label">${k}</label><input type="number" id="rt-${k}" value="${rates[k]}" class="input">`).join('');
-            document.getElementById('set-modal').style.display =
+            var h = "";
+            for(var k in rates) { h += '<label class="label">'+k+'</label><input type="number" id="rt-'+k+'" value="'+rates[k]+'" class="input">'; }
+            document.getElementById('price-inputs').innerHTML = h;
+            document.getElementById('set-modal').style.display = 'flex';
+        }
+        function closeSet() {
+            for(var k in rates) { rates[k] = parseFloat(document.getElementById('rt-'+k).value) || 0; }
+            localStorage.setItem('PT_V68_RATES', JSON.stringify(rates));
+            document.getElementById('set-modal').style.display = 'none';
+            draw();
+        }
+
+        document.getElementById('in-date').valueAsDate = new Date();
+        draw();
+    </script>
+</body>
+</html>
