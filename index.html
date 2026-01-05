@@ -3,28 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrack V68-PERFECT</title>
+    <title>ProTrack V68.Final</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background: #0f172a; color: white; font-family: sans-serif; margin: 0; padding-bottom: 90px; }
-        
         .nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: #1e293b; display: flex; border-top: 1px solid #475569; z-index: 9999; }
         .nav-item { flex: 1; color: #64748b; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px; cursor: pointer; }
         .nav-item.active { color: #3b82f6; border-top: 3px solid #3b82f6; background: rgba(59, 130, 246, 0.1); }
-
         .page { display: none; padding: 15px; }
         .active-page { display: block !important; }
-
         .card { background: #1e293b; border-radius: 10px; padding: 15px; margin-bottom: 15px; border: 1px solid #334155; position: relative; }
         .input { background: #0f172a; border: 1px solid #475569; color: white; border-radius: 6px; padding: 12px; width: 100%; font-size: 16px; margin-bottom: 10px; display: block; }
         .btn { background: #2563eb; color: white; padding: 15px; border-radius: 10px; font-weight: bold; border: none; font-size: 16px; width: 100%; }
         .btn-sec { background: #334155; padding: 10px; font-size: 10px; color: white; border-radius: 5px; text-align: center; font-weight: bold; flex: 1; border: none; }
-        
         .row-item { border-bottom: 1px solid #475569; padding: 10px 0; }
         .blue-h { color: #3b82f6; font-weight: bold; font-size: 11px; display: block; margin-top: 4px; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .label { font-size: 11px; color: #94a3b8; margin-bottom: 5px; text-transform: uppercase; }
-        
         .del-btn { color: #ef4444; border: none; background: none; font-size: 16px; padding: 5px; cursor: pointer; }
         .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:10000; padding:20px; align-items:center; }
     </style>
@@ -42,13 +37,15 @@
         <div class="card">
             <div class="grid">
                 <input type="date" id="in-date" class="input">
-                <input type="text" id="in-proj" placeholder="PROJET" class="input">
+                <input type="text" id="in-proj" placeholder="PROJET" class="input" list="proj-list">
+                <datalist id="proj-list"></datalist>
             </div>
             <select id="in-type" class="input">
                 <option value="Production">Production</option>
                 <option value="Trajet">Trajet</option>
                 <option value="Pose Piges">Pose Piges</option>
                 <option value="Pose Omnes">Pose Omnes</option>
+                <option value="Jours OFF">Jours OFF</option>
             </select>
             <div class="grid">
                 <div><label class="label">Début</label><input type="time" id="s1" class="input"></div>
@@ -78,17 +75,17 @@
     </div>
 
     <script>
-        var db = JSON.parse(localStorage.getItem('PT_V68_DATA') || '[]');
-        var billed = JSON.parse(localStorage.getItem('PT_V68_BILL') || '[]');
-        var archived = JSON.parse(localStorage.getItem('PT_V68_ARCH') || '[]');
-        var rates = JSON.parse(localStorage.getItem('PT_V68_RT')) || { prod: 25, trajet: 20, piges: 350, omnes: 300 };
+        var db = JSON.parse(localStorage.getItem('PT_DATA') || '[]');
+        var billed = JSON.parse(localStorage.getItem('PT_BILL') || '[]');
+        var archived = JSON.parse(localStorage.getItem('PT_ARCH') || '[]');
+        var rates = JSON.parse(localStorage.getItem('PT_RT')) || { prod: 25, trajet: 20, piges: 350, omnes: 300, off: 100 };
 
         function go(n) {
             var pgs = ['pg0','pg1','pg2'];
-            pgs.forEach(function(p, i) {
-                document.getElementById(p).classList.toggle('active-page', i === n);
+            for(var i=0; i<pgs.length; i++) {
+                document.getElementById(pgs[i]).classList.toggle('active-page', i === n);
                 document.getElementById('nv'+i).classList.toggle('active', i === n);
-            });
+            }
             draw();
         }
 
@@ -104,8 +101,8 @@
             
             var val=0, dur=0, hStr = (document.getElementById('s1').value || "??") + " > " + (document.getElementById('e2').value || "??");
 
-            if(t.indexOf('Pose') > -1) {
-                val = t==='Pose Piges' ? rates.piges : rates.omnes;
+            if(t.indexOf('Pose') > -1 || t === 'Jours OFF') {
+                val = (t==='Pose Piges') ? rates.piges : (t==='Pose Omnes' ? rates.omnes : rates.off);
                 hStr = "FORFAIT";
             } else {
                 if(s1 > -1 && e2 > s1) dur = (e2 - s1) / 60;
@@ -113,7 +110,7 @@
             }
 
             db.unshift({ id: new Date().getTime(), d: d, p: p, t: t, val: val, hStr: hStr, dur: dur });
-            localStorage.setItem('PT_V68_DATA', JSON.stringify(db));
+            localStorage.setItem('PT_DATA', JSON.stringify(db));
             document.getElementById('in-proj').value = "";
             draw();
             alert("Enregistré");
@@ -122,15 +119,22 @@
         function del(id) {
             if(confirm("Supprimer ?")) {
                 db = db.filter(function(o) { return o.id !== id; });
-                localStorage.setItem('PT_V68_DATA', JSON.stringify(db));
+                localStorage.setItem('PT_DATA', JSON.stringify(db));
                 draw();
             }
         }
 
         function draw() {
-            // Liste Saisie
+            // Suggestion projets
+            var plist = [];
+            db.forEach(function(o){ if(plist.indexOf(o.p)==-1) plist.push(o.p); });
+            document.getElementById('proj-list').innerHTML = plist.map(function(x){ return '<option value="'+x+'">'; }).join('');
+
+            // Liste Saisie avec détails
             document.getElementById('recent-list').innerHTML = db.slice(0, 3).map(function(o) {
-                return '<div class="card" style="font-size:12px;"><b>'+o.p+'</b> - '+o.val.toFixed(2)+'€ <button class="del-btn" onclick="del('+o.id+')" style="float:right">🗑️</button></div>';
+                return '<div class="card" style="font-size:12px;">' +
+                       '<b>'+o.p+'</b> - '+o.val.toFixed(2)+'€ <button class="del-btn" onclick="del('+o.id+')" style="float:right">🗑️</button><br>' +
+                       '<span style="color:#94a3b8; font-size:10px;">'+o.d.split('-').reverse().join('/')+' | '+o.hStr+'</span></div>';
             }).join('');
 
             var hB="", hA="", tAF=0, tF=0;
@@ -145,23 +149,17 @@
                 if(!isA) { if(isB) tF += total; else tAF += total; }
 
                 var lines = groups[proj].map(function(o) {
-                    return '<div class="row-item">' +
-                           '<div style="display:flex; justify-content:space-between; font-size:12px;">' +
-                           '<span>'+o.d.split('-').reverse().join('/')+'</span>' +
-                           '<span>'+o.hStr+'</span>' +
-                           '<span>'+o.val.toFixed(2)+'€ <button class="del-btn" onclick="del('+o.id+')">×</button></span>' +
-                           '</div>' +
-                           (o.dur > 0 ? '<span class="blue-h">TOTAL : '+o.dur.toFixed(2)+'h</span>' : '') +
-                           '</div>';
+                    return '<div class="row-item"><div style="display:flex; justify-content:space-between; font-size:12px;">' +
+                           '<span>'+o.d.split('-').reverse().join('/')+'</span><span>'+o.hStr+'</span>' +
+                           '<span>'+o.val.toFixed(2)+'€ <button class="del-btn" onclick="del('+o.id+')">×</button></span></div>' +
+                           (o.dur > 0 ? '<span class="blue-h">TOTAL : '+o.dur.toFixed(2)+'h</span>' : '') + '</div>';
                 }).join('');
 
                 var card = '<div class="card" style="border-left: 5px solid '+(isB ? '#10b981' : '#3b82f6')+'">' +
                     '<div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:10px;"><span>'+proj+'</span><span>'+total.toFixed(2)+'€</span></div>' +
-                    lines +
-                    '<div style="display:flex; gap:10px; margin-top:15px;">' +
+                    lines + '<div style="display:flex; gap:10px; margin-top:15px;">' +
                     '<button class="btn-sec" onclick="tB(\''+proj+'\')">'+(isB ? 'À FACTURER' : 'FACTURÉ')+'</button>' +
-                    '<button class="btn-sec" onclick="tA(\''+proj+'\')">'+(isA ? 'RÉACTIVER' : 'ARCHIVER')+'</button>' +
-                    '</div></div>';
+                    '<button class="btn-sec" onclick="tA(\''+proj+'\')">'+(isA ? 'RÉACTIVER' : 'ARCHIVER')+'</button></div></div>';
                 if(isA) hA += card; else hB += card;
             }
             document.getElementById('list-bilan').innerHTML = hB || "Vide";
@@ -170,8 +168,8 @@
             document.getElementById('sum-f').innerText = tF.toFixed(2) + "€";
         }
 
-        window.tB = function(p) { if(billed.indexOf(p) > -1) billed = billed.filter(function(x){return x!==p;}); else billed.push(p); localStorage.setItem('PT_V68_BILL', JSON.stringify(billed)); draw(); };
-        window.tA = function(p) { if(archived.indexOf(p) > -1) archived = archived.filter(function(x){return x!==p;}); else archived.push(p); localStorage.setItem('PT_V68_ARCH', JSON.stringify(archived)); draw(); };
+        window.tB = function(p) { if(billed.indexOf(p) > -1) billed = billed.filter(function(x){return x!==p;}); else billed.push(p); localStorage.setItem('PT_BILL', JSON.stringify(billed)); draw(); };
+        window.tA = function(p) { if(archived.indexOf(p) > -1) archived = archived.filter(function(x){return x!==p;}); else archived.push(p); localStorage.setItem('PT_ARCH', JSON.stringify(archived)); draw(); };
 
         function openSet() {
             var h = "";
@@ -181,11 +179,10 @@
         }
         function closeSet() {
             for(var k in rates) { rates[k] = parseFloat(document.getElementById('rt-'+k).value) || 0; }
-            localStorage.setItem('PT_V68_RT', JSON.stringify(rates));
+            localStorage.setItem('PT_RT', JSON.stringify(rates));
             document.getElementById('set-modal').style.display = 'none';
             draw();
         }
-
         document.getElementById('in-date').valueAsDate = new Date();
         draw();
     </script>
