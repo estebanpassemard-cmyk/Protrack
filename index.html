@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrack V86</title>
+    <title>ProTrack V87</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background: #0f172a; color: white; font-family: sans-serif; margin: 0; padding-bottom: 90px; }
@@ -37,7 +37,6 @@
         .top-bar { display: flex; gap: 10px; margin-bottom: 15px; }
         .icon-btn { background: #1e293b; padding: 10px; border-radius: 10px; cursor: pointer; font-size: 22px; border: 1px solid #334155; position: relative; }
         
-        /* BADGE SAUVEGARDE */
         .save-badge { position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; font-weight: bold; border: 1px solid #0f172a; }
 
         .toggle-row { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; font-size: 13px; color: #3b82f6; font-weight: bold; }
@@ -47,7 +46,7 @@
 <body>
 
     <div id="pg0" class="page" style="display:block;">
-        <div class="version-tag">V86</div>
+        <div class="version-tag">V87</div>
         <div class="top-bar">
             <div class="icon-btn" onclick="openSet()">⚙️</div>
             <div class="icon-btn" onclick="openSave()">
@@ -185,7 +184,11 @@
             for (var proj in groups) {
                 var isB = billed.includes(proj), isA = archived.includes(proj);
                 var totVal = 0, lines = "";
-                groups[proj].forEach(it => {
+                
+                // TRI CHRONOLOGIQUE DES LIGNES POUR L'AFFICHAGE DANS LA CARTE
+                var sortedDisplay = groups[proj].sort((a, b) => new Date(a.d) - new Date(b.d));
+                
+                sortedDisplay.forEach(it => {
                     totVal += it.val;
                     var hourInfo = it.dur > 0 ? `<span class="hour-tag">${it.dur.toFixed(2)}H</span>` : '';
                     lines += `<div class="row-item"><div style="display:flex; justify-content:space-between; align-items:start;"><div><b>${it.d.split('-').reverse().join('/')}</b><br><span class="type-tag">${it.t}</span> ${hourInfo}<br><small style="color:#94a3b8">${it.hStr}</small></div><div style="text-align:right; display:flex; align-items:center;"><b style="font-size:14px;">${it.val.toFixed(2)}€</b><button class="del-btn" onclick="del(${it.id})">🗑️</button></div></div></div>`;
@@ -213,7 +216,6 @@
             lastSave = new Date().getTime();
             localStorage.setItem('P69S_LSAVE', lastSave);
             updateSaveCounter();
-            
             var groups = {};
             db.forEach(it => { groups[it.p] = groups[it.p] || []; groups[it.p].push(it); });
             var txt = "--- RÉCAPITULATIF CHRONOLOGIQUE ---\n\n";
